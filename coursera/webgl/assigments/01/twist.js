@@ -13,7 +13,7 @@ var dom_helper = (() => {
     };
 })();
 
-var polygon = (() => {
+var geometry = (() => {
     const FULL_CIRCLE = 2 * Math.PI;
     let lineIntersection = (k, l, m, n) => {
         let A1 = l[1] - k[1];
@@ -36,7 +36,7 @@ var polygon = (() => {
     };
 
     return {
-        buildRegular(x, y, radius, npoints) {
+        buildPolygonRegular(x, y, radius, npoints) {
             let output = [];
             let angle = FULL_CIRCLE / npoints;
             for(let a = 0; a < FULL_CIRCLE; a += angle) {
@@ -48,7 +48,7 @@ var polygon = (() => {
             return output;
         },
         buildStar(x, y, radius) {
-            let pentagon = this.buildRegular(x, y, radius, 5);
+            let pentagon = this.buildPolygonRegular(x, y, radius, 5);
             let p1 = lineIntersection(pentagon[0], pentagon[2], pentagon[1], pentagon[3]);
             let p2 = lineIntersection(pentagon[1], pentagon[3], pentagon[2], pentagon[4]);
             let p3 = lineIntersection(pentagon[2], pentagon[4], pentagon[3], pentagon[0]);
@@ -62,12 +62,7 @@ var polygon = (() => {
 
             return output;
         },
-    };
-})();
-
-var twist = (() => {
-    return {
-        point2d(angle, point) {
+        twistPoint2d(angle, point) {
             var x = point[0];
             var y = point[1];
             var distance = Math.sqrt((x * x) + (y * y));
@@ -77,21 +72,16 @@ var twist = (() => {
 
             return vec2(xp, yp);
         },
-        polygon2d(angle, polygon) {
+        twistPolygon2d(angle, polygon) {
             let output = [];
             for(let point of polygon) {
-                let newPoint = this.point2d(angle, point);
+                let newPoint = this.twistPoint2d(angle, point);
                 output.push(newPoint);
             };
 
             return output;
-        }
-    };
-})();
-
-var tesselation = (() => {
-    return {
-        triangle(a, b, c, count) {
+        },
+        tesselationTriangle(a, b, c, count) {
             var output = [];
             var divide = (a, b, c, count) => {
                 if(count === 0) {
@@ -115,6 +105,10 @@ var tesselation = (() => {
         }
     };
 })();
+
+var polygon = (() => { })();
+var twist = (() => { })();
+var tesselation = (() => { })();
 
 var drawing = (() => {
     var gl;
@@ -157,11 +151,11 @@ var drawing = (() => {
             vertices.push(a, b, d, b, c, d);
         },
         makeTessTriangles(a, b, c, count) {
-            vertices = tesselation.triangle(a, b, c, count);
+            vertices = geometry.tesselationTriangle(a, b, c, count);
         },
         makeTessQuad(a, b, c, d, count) {
-            vertices = vertices.concat(tesselation.triangle(a, b, d, count));
-            vertices = vertices.concat(tesselation.triangle(b, c, d, count));
+            vertices = vertices.concat(geometry.tesselationTriangle(a, b, d, count));
+            vertices = vertices.concat(geometry.tesselationTriangle(b, c, d, count));
         },
         makePolygon(polygon, count = 1) {
             let a1 = polygon[0];
@@ -183,7 +177,7 @@ var drawing = (() => {
         },
         twist(angleDegree) {
             let angle = radians(angleDegree);
-            vertices = twist.polygon2d(angle, vertices, vertices);
+            vertices = geometry.twistPolygon2d(angle, vertices, vertices);
         },
         clear() {
             vertices = [];
@@ -206,49 +200,46 @@ var drawing = (() => {
 })();
 
 var application = (() => {
+    var redraw = evt => {
+        let angleDegree = angleCtrl.value;
+        let tessSteps = tessStepsCtrl.value;
+        let shape = dom_helper.querySelected('shape').value;
+
+        drawing.clear();
+        drawing.wireframe = dom_helper.querySelected('fill_style').value === 'wireframe';
+
+        switch (shape) {
+            case 'quad':
+                drawing.makeTessQuad(
+                    vec2(-0.5, -0.5),
+                    vec2(-0.5,  0.5),
+                    vec2( 0.5,  0.5),
+                    vec2( 0.5, -0.5),
+                    tessSteps
+                );
+                break;
+
+            case 'star':
+                let star = geometry.buildStar(0, 0, 0.5);
+                drawing.makePolygon(star, tessSteps);
+                break;
+
+            default: //triangle
+                drawing.makeTessTriangles(
+                    vec2(-0.5, -0.5),
+                    vec2( 0.0,  0.5),
+                    vec2( 0.5, -0.5),
+                    tessSteps
+                );
+        }
+
+        drawing.twist(angleDegree);
+        drawing.upload();
+        drawing.render();
+    };
+
     return {
         main() {
-            var redraw = evt => {
-                let angleDegree = angleCtrl.value;
-                let tessSteps = tessStepsCtrl.value;
-                let shape = dom_helper.querySelected('shape').value;
-
-                drawing.clear();
-                drawing.wireframe = dom_helper.querySelected('fill_style').value === 'wireframe';
-
-                switch (shape) {
-                    case 'quad':
-                        drawing.makeTessQuad(
-                            vec2(-0.5, -0.5),
-                            vec2(-0.5,  0.5),
-                            vec2( 0.5,  0.5),
-                            vec2( 0.5, -0.5),
-                            tessSteps
-                        );
-                        break;
-
-                    case 'star':
-                        let star = polygon.buildStar(0, 0, 0.5);
-                        drawing.makePolygon(star, tessSteps);
-                        break;
-
-                    default: //triangle
-                        drawing.makeTessTriangles(
-                            vec2(-0.5, -0.5),
-                            vec2( 0.0,  0.5),
-                            vec2( 0.5, -0.5),
-                            tessSteps
-                        );
-                }
-
-
-
-
-                drawing.twist(angleDegree);
-                drawing.upload();
-                drawing.render();
-            };
-
             var angleCtrl = document.getElementById('angleCtrl');
             var tessStepsCtrl = document.getElementById('tessStepsCtrl');
             angleCtrl.addEventListener('change', redraw);
