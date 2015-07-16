@@ -49,15 +49,27 @@ var geometry = (() => {
         },
         buildStar(x, y, radius) {
             let pentagon = this.buildPolygonRegular(x, y, radius, 5);
+            let p0 = lineIntersection(pentagon[0], pentagon[2], pentagon[1], pentagon[4]);
             let p1 = lineIntersection(pentagon[0], pentagon[2], pentagon[1], pentagon[3]);
-            let p2 = lineIntersection(pentagon[1], pentagon[3], pentagon[2], pentagon[4]);
+            let p2 = lineIntersection(pentagon[2], pentagon[4], pentagon[3], pentagon[1]);
             let p3 = lineIntersection(pentagon[2], pentagon[4], pentagon[3], pentagon[0]);
+            let p4 = lineIntersection(pentagon[0], pentagon[3], pentagon[1], pentagon[4]);
+            // let p1 = lineIntersection(pentagon[0], pentagon[2], pentagon[1], pentagon[3]);
+            // let p2 = lineIntersection(pentagon[1], pentagon[3], pentagon[2], pentagon[4]);
+            // let p3 = lineIntersection(pentagon[2], pentagon[4], pentagon[3], pentagon[0]);
+            // let p4 = lineIntersection(pentagon[3], pentagon[0], pentagon[4], pentagon[1]);
+            // let p5 = lineIntersection(pentagon[4], pentagon[1], pentagon[0], pentagon[2]);
 
             let output = [];
             output.push(
-                pentagon[0], pentagon[3], p1,
-                pentagon[1], pentagon[4], p2,
-                pentagon[2], pentagon[0], p3
+                pentagon[0], p0, p4,
+                pentagon[1], p0, p1,
+                pentagon[2], p1, p2,
+                pentagon[3], p2, p3,
+                pentagon[4], p3, p4
+                // pentagon[1], pentagon[5], p1,
+                // pentagon[1], pentagon[4], p2,
+                // pentagon[2], pentagon[0], p3
             );
 
             return output;
@@ -106,10 +118,6 @@ var geometry = (() => {
     };
 })();
 
-var polygon = (() => { })();
-var twist = (() => { })();
-var tesselation = (() => { })();
-
 var drawing = (() => {
     var gl;
     var canvas;
@@ -151,29 +159,11 @@ var drawing = (() => {
             vertices.push(a, b, d, b, c, d);
         },
         makeTessTriangles(a, b, c, count) {
-            vertices = geometry.tesselationTriangle(a, b, c, count);
+            vertices = vertices.concat(geometry.tesselationTriangle(a, b, c, count));
         },
         makeTessQuad(a, b, c, d, count) {
             vertices = vertices.concat(geometry.tesselationTriangle(a, b, d, count));
             vertices = vertices.concat(geometry.tesselationTriangle(b, c, d, count));
-        },
-        makePolygon(polygon, count = 1) {
-            let a1 = polygon[0];
-            let a2 = polygon[1];
-            let a3 = polygon[2];
-            let a4 = polygon[3];
-            let a5 = polygon[4];
-            let a6 = polygon[5];
-            let a7 = polygon[6];
-            let a8 = polygon[7];
-            let a9 = polygon[8];
-            vertices.push(a1, a2, a3);
-            vertices.push(a4, a5, a6);
-            vertices.push(a7, a8, a9);
-
-            // vertices = vertices.concat(tesselation.triangle(a1, a2, a3, count));
-            // vertices = vertices.concat(tesselation.triangle(a4, a5, a6, count));
-            // vertices = vertices.concat(tesselation.triangle(a7, a8, a9, count));
         },
         twist(angleDegree) {
             let angle = radians(angleDegree);
@@ -221,7 +211,27 @@ var application = (() => {
 
             case 'star':
                 let star = geometry.buildStar(0, 0, 0.5);
-                drawing.makePolygon(star, tessSteps);
+
+                // drawing.makeTriangle(star[0], star[1], star[2]);
+                // drawing.makeTriangle(star[3], star[4], star[5]);
+                // drawing.makeTriangle(star[6], star[7], star[8]);
+                // drawing.makeTriangle(star[9], star[10], star[11]);
+                // drawing.makeTriangle(star[12], star[13], star[14]);
+                //
+                // drawing.makeTriangle(star[1], star[2], star[7]);
+                // drawing.makeTriangle(star[2], star[7], star[8]);
+                // drawing.makeTriangle(star[8], star[11], star[14]);
+
+                drawing.makeTessTriangles( star[0],  star[1],  star[2], tessSteps);
+                drawing.makeTessTriangles( star[3],  star[4],  star[5], tessSteps);
+                drawing.makeTessTriangles( star[6],  star[7],  star[8], tessSteps);
+                drawing.makeTessTriangles( star[9], star[10], star[11], tessSteps);
+                drawing.makeTessTriangles(star[12], star[13], star[14], tessSteps);
+
+                drawing.makeTessTriangles(star[1],  star[2],  star[7], tessSteps);
+                drawing.makeTessTriangles(star[2],  star[7],  star[8], tessSteps);
+                drawing.makeTessTriangles(star[8], star[11], star[14], tessSteps);
+
                 break;
 
             default: //triangle
