@@ -1,5 +1,18 @@
 "use strict";
 
+var dom_helper = (() => {
+    return {
+        querySelected(name) {
+            let nodeList = document.getElementsByName(name);
+
+            for(let node of nodeList) {
+                if(node.checked) return node;
+            }
+            return null;
+        }
+    };
+})();
+
 var polygon = (() => {
     const FULL_CIRCLE = 2 * Math.PI;
     let lineIntersection = (k, l, m, n) => {
@@ -118,6 +131,7 @@ var drawing = (() => {
             this.setDefaults();
         },
         setDefaults() {
+            this.wireframe = false;
             gl.viewport( 0, 0, canvas.width, canvas.height );
             gl.clearColor(1.0, 1.0, 1.0, 1.0);
         },
@@ -175,93 +189,83 @@ var drawing = (() => {
             vertices = [];
         },
         render() {
-            let wireframe = true;
             gl.clear( gl.COLOR_BUFFER_BIT );
 
-            // gl.drawArrays( gl.LINE_LOOP, 0, vertices.length );
-
-            // if(sides === 3) {
-                if(wireframe) {
-                    for(let i = 0; i < vertices.length; i += 3) {
-                        gl.drawArrays(gl.LINE_LOOP, i, 3);
-                    }
-                } else {
-                    gl.drawArrays( gl.TRIANGLES, 0, vertices.length );
+            if(this.wireframe) {
+                for(let i = 0; i < vertices.length; i += 3) {
+                    gl.drawArrays(gl.LINE_LOOP, i, 3);
                 }
-            // } else if(sides === 4) {
-            // }
+            } else {
+                gl.drawArrays( gl.TRIANGLES, 0, vertices.length );
+            }
 
-        }
+        },
+        get wireframe() { return this._wireframe; },
+        set wireframe(wireframe) { this._wireframe = wireframe; }
     };
 })();
 
 var application = (() => {
     return {
         main() {
-            var draw = (angleDegree = 0, tessSteps = 1) => {
-                drawing.clear();
-                drawing.makeTessTriangles(
-                    vec2(-0.5, -0.5),
-                    vec2( 0.0,  0.5),
-                    vec2( 0.5, -0.5),
-                    tessSteps
-                );
-
-                drawing.twist(angleDegree);
-                drawing.upload();
-                drawing.render();
-            };
-
-            var drawStar = (angleDegree = 180, tessSteps = 4) => {
-                drawing.clear();
-
-                var v = 0.5;
-
-                var star = polygon.buildStar(0, 0, 0.5);
-                drawing.makePolygon(star, tessSteps);
-
-                // drawing.twist(angleDegree);
-                drawing.upload();
-                drawing.render();
-            };
-
-            var drawQuad = (angleDegree = 15, tessSteps = 5) => {
-                drawing.makeTessQuad(
-                    vec2(-0.5, -0.5),
-                    vec2(-0.5,  0.5),
-                    vec2( 0.5,  0.5),
-                    vec2( 0.5, -0.5),
-                    tessSteps
-                );
-
-                drawing.twist(angleDegree);
-                drawing.upload();
-                drawing.render();
-            };
-
-
             var redraw = evt => {
-                let angleLabel = document.getElementById('angleLabel');
-                let tessStepsLabel = document.getElementById('tessStepsLabel');
-
-                let angle = angleCtrl.value;
+                let angleDegree = angleCtrl.value;
                 let tessSteps = tessStepsCtrl.value;
+                let shape = dom_helper.querySelected('shape').value;
 
-                draw(angle, tessSteps);
+                drawing.clear();
+                drawing.wireframe = dom_helper.querySelected('fill_style').value === 'wireframe';
 
-                angleLabel.innerHTML = `${angle}\u00B0`;
-                tessStepsLabel.innerHTML = `${tessSteps}`;
+                switch (shape) {
+                    case 'quad':
+                        drawing.makeTessQuad(
+                            vec2(-0.5, -0.5),
+                            vec2(-0.5,  0.5),
+                            vec2( 0.5,  0.5),
+                            vec2( 0.5, -0.5),
+                            tessSteps
+                        );
+                        break;
+
+                    case 'star':
+                        let star = polygon.buildStar(0, 0, 0.5);
+                        drawing.makePolygon(star, tessSteps);
+                        break;
+
+                    default: //triangle
+                        drawing.makeTessTriangles(
+                            vec2(-0.5, -0.5),
+                            vec2( 0.0,  0.5),
+                            vec2( 0.5, -0.5),
+                            tessSteps
+                        );
+                }
+
+
+
+
+                drawing.twist(angleDegree);
+                drawing.upload();
+                drawing.render();
             };
 
             var angleCtrl = document.getElementById('angleCtrl');
             var tessStepsCtrl = document.getElementById('tessStepsCtrl');
             angleCtrl.addEventListener('change', redraw);
             tessStepsCtrl.addEventListener('change', redraw);
+            for(let node of document.getElementsByName('fill_style')) {
+                node.addEventListener('change', evt => {
+                    if(evt.target.checked) redraw();
+                });
+            }
+            for(let node of document.getElementsByName('shape')) {
+                node.addEventListener('change', evt => {
+                    if(evt.target.checked) redraw();
+                });
+            }
 
             drawing.init("gl-canvas");
-            // draw();
-            // drawQuad();
-            drawStar();
+            redraw();
         }
     };
 })();
