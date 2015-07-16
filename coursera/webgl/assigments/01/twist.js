@@ -1,6 +1,6 @@
 "use strict";
 
-// Compiled code with babeljs, if you want to see the original code please see /twist.js
+// Compiled code with babeljs, if you want to see the original code please see /twist_es6.js
 
 var dom_helper = (function () {
     return {
