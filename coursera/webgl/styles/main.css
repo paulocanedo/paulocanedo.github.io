@@ -17,6 +17,23 @@ h3 {
     font-weight: 100;
 }
 
+canvas {
+    border: 0px solid black;
+    cursor: crosshair;
+}
+
+.bordered {
+    border: 1px solid black;
+}
+
+#chooseColorButton {
+    border-radius:12px;
+    width: 200px;
+    height: 25px;
+    background-color: black;
+    border: 1px solid white;
+}
+
 #layout {
     padding: 0;
 }
