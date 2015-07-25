@@ -219,6 +219,11 @@ var drawing = (function () {
 })();
 
 var application = (function () {
+    var angleCtrl = document.getElementById('angleCtrl');
+    var tessStepsCtrl = document.getElementById('tessStepsCtrl');
+    var nodeList1 = document.getElementsByName('fill_style');
+    var nodeList2 = document.getElementsByName('shape');
+
     var redraw = function redraw(evt) {
         var angleDegree = angleCtrl.value;
         var tessSteps = tessStepsCtrl.value;
@@ -269,11 +274,6 @@ var application = (function () {
 
     return {
         main: function main() {
-            var angleCtrl = document.getElementById('angleCtrl');
-            var tessStepsCtrl = document.getElementById('tessStepsCtrl');
-            var nodeList1 = document.getElementsByName('fill_style');
-            var nodeList2 = document.getElementsByName('shape');
-
             angleCtrl.addEventListener('change', redraw);
             tessStepsCtrl.addEventListener('change', redraw);
 
