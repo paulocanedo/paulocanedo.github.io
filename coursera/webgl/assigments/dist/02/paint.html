@@ -4,9 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Assigment 02, Coursera WebGL</title>
-    <link rel="stylesheet" href="../../styles/pure-min.css">
-    <link rel="stylesheet" href="../../styles/grids-responsive-min.css">
-    <link rel="stylesheet" href="../../styles/main.css">
+    <link rel="stylesheet" href="/coursera/webgl/styles/pure-min.css">
+    <link rel="stylesheet" href="/coursera/webgl/styles/grids-responsive-min.css">
+    <link rel="stylesheet" href="/coursera/webgl/styles/main.css">
 </head>
 <body>
 
@@ -16,7 +16,7 @@
 
             <fieldset class="canvas-control">
                 <legend>Color</legend>
-                <canvas id="gl-canvas-color" width="128" height="128">
+                <canvas id="gl-canvas-color" width="256" height="128">
                     Oops ... your browser doesn't support the HTML5 canvas element
                 </canvas>
                 <form class="pure-form">
@@ -25,21 +25,16 @@
             </fieldset>
 
             <fieldset class="canvas-control">
-                <legend>Tool</legend>
+                <legend>Min Interpolate Distance</legend>
                 <form class="pure-form">
-                    <label for="lineId" class="pure-checkbox">
-                        <input id="lineId" name="tool" value="0" type="radio" checked>
-                        Line
-                    </label>
-                    <label for="brushId" class="pure-checkbox">
-                        <input id="brushId" name="tool" value="1" type="radio">
-                        Brush
-                    </label>
+                    <span>1</span>
+                    <input id="minInterpolateDistanceCtrl" type="range" value="1" min="1" max="500" step="1">
+                    <span>500</span>
                 </form>
             </fieldset>
 
             <fieldset class="canvas-control">
-                <legend>Line Width</legend>
+                <legend>Size</legend>
                 <form class="pure-form">
                     <span>0.1</span>
                     <input id="lineWidthCtrl" type="range" value="1" min="0.1" max="20" step="0.1">
@@ -47,23 +42,6 @@
                 </form>
             </fieldset>
 
-            <fieldset class="canvas-control">
-                <legend>Line Join</legend>
-                <form class="pure-form">
-                    <label for="beveledId" class="pure-checkbox">
-                        <input id="beveledId" name="line_join" value="0" type="radio" checked>
-                        Beveled
-                    </label>
-                    <label for="miterId" class="pure-checkbox">
-                        <input id="miterId" name="line_join" value="1" type="radio">
-                        Miter
-                    </label>
-                    <!-- <label for="starId" class="pure-checkbox">
-                        <input id="starId" name="line_join" value="2" type="radio">
-                        Round
-                    </label> -->
-                </form>
-            </fieldset>
         </div>
     </div>
 
@@ -142,14 +120,19 @@ varying vec4 fColor;
 void
 main()
 {
-    gl_FragColor = fColor;
+    float y = gl_FragCoord.y / 128.0;//canvas height
+    if(y > .5) {
+      gl_FragColor = mix(fColor, vec4(1.0, 1.0, 1.0, 1.0), (y-0.5)*2.0);
+    } else {
+      gl_FragColor = mix(vec4(0.0, 0.0, 0.0, 1.0), fColor, y*2.0);
+    }
 }
 </script>
 
-<script type="application/javascript" src="../../Common/webgl-utils.js"></script>
-<script type="application/javascript" src="../../Common/initShaders.js"></script>
-<script type="application/javascript" src="../../Common/MV.js"></script>
-<script type="application/javascript" src="../../Common/flatten.js"></script>
+<script type="application/javascript" src="/coursera/webgl/Common/webgl-utils.js"></script>
+<script type="application/javascript" src="/coursera/webgl/Common/initShaders.js"></script>
+<script type="application/javascript" src="/coursera/webgl/Common/MV.js"></script>
+<script type="application/javascript" src="/coursera/webgl/Common/flatten.js"></script>
 <script type="application/javascript;version=1.7" src="paint.js"></script>
 <script type="application/javascript;version=1.7" src="color_choose.js"></script>
 </body>

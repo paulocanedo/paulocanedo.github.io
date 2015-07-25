@@ -49,7 +49,10 @@ let drawing_color = (() => {
             let colorButton = document.getElementById('chooseColorButton');
             colorButton.style.background = `rgb(${r},${g},${b})`;
             colorButton.value = `rgb(${fr},${fg},${fb})`;
-            application_color.color = [pixels[0] / 255, pixels[1] / 255, pixels[2] / 255];
+
+            let rgb = [pixels[0] / 255, pixels[1] / 255, pixels[2] / 255];
+            application_color.color = rgb;
+            colorButton.style.color = rgb[0] * rgb[1] * rgb[2] > 0.0001 ? 'black' : 'white';
 
             drawing.redraw();
         },
@@ -71,9 +74,14 @@ let drawing_color = (() => {
             gl.enableVertexAttribArray( vPosition );
 
             let colors = [
-                0.0, 0.0, 1.0,
+                1.0, 0.0, 0.0,
                 1.0, 0.0, 0.0,
                 0.0, 1.0, 0.0,
+                0.0, 1.0, 0.0,
+                0.0, 0.0, 1.0,
+                0.0, 0.0, 1.0,
+                1.0, 0.0, 0.0,
+                1.0, 0.0, 0.0,
             ];
 
             let cBufferId = gl.createBuffer();
@@ -103,7 +111,7 @@ let drawing_color = (() => {
         render() {
             gl.clear( gl.COLOR_BUFFER_BIT );
 
-            gl.drawArrays( gl.TRIANGLES, 0, vertices.length );
+            gl.drawArrays( gl.TRIANGLE_STRIP, 0, vertices.length );
         }
     };
 })();
@@ -115,9 +123,14 @@ let application_color = (() => {
     let currentColor = [0, 0, 0];
 
     let path = [
-        vec2(   0,  w),
-        vec2(   w,  w),
-        vec2( w/2,  0)
+        vec2(       0, 0),
+        vec2(       0, h),
+        vec2(     w/3, 0),
+        vec2(     w/3, h),
+        vec2( 2 * w/3, 0),
+        vec2( 2 * w/3, h),
+        vec2(       w, 0),
+        vec2(       w, h),
     ];
 
     return {

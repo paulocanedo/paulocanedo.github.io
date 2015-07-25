@@ -1,7 +1,5 @@
 "use strict";
 
-// Compiled code with babeljs, if you want to see the original code please see /twist_es6.js
-
 var dom_helper = (function () {
     return {
         querySelected: function querySelected(name) {
@@ -224,17 +222,17 @@ var application = (function () {
     var redraw = function redraw(evt) {
         var angleDegree = angleCtrl.value;
         var tessSteps = tessStepsCtrl.value;
-        var shape = dom_helper.querySelected("shape").value;
+        var shape = dom_helper.querySelected('shape').value;
 
         drawing.clear();
-        drawing.wireframe = dom_helper.querySelected("fill_style").value === "wireframe";
+        drawing.wireframe = dom_helper.querySelected('fill_style').value === 'wireframe';
 
         switch (shape) {
-            case "quad":
+            case 'quad':
                 drawing.makeTessQuad(vec2(-0.5, -0.5), vec2(-0.5, 0.5), vec2(0.5, 0.5), vec2(0.5, -0.5), tessSteps);
                 break;
 
-            case "star":
+            case 'star':
                 var star = geometry.buildStar(0, 0, 0.5);
 
                 // drawing.makeTriangle(star[0], star[1], star[2]);
@@ -271,23 +269,23 @@ var application = (function () {
 
     return {
         main: function main() {
-            var angleCtrl = document.getElementById("angleCtrl");
-            var tessStepsCtrl = document.getElementById("tessStepsCtrl");
-            var nodeList1 = document.getElementsByName("fill_style");
-            var nodeList2 = document.getElementsByName("shape");
+            var angleCtrl = document.getElementById('angleCtrl');
+            var tessStepsCtrl = document.getElementById('tessStepsCtrl');
+            var nodeList1 = document.getElementsByName('fill_style');
+            var nodeList2 = document.getElementsByName('shape');
 
-            angleCtrl.addEventListener("change", redraw);
-            tessStepsCtrl.addEventListener("change", redraw);
+            angleCtrl.addEventListener('change', redraw);
+            tessStepsCtrl.addEventListener('change', redraw);
 
             for (var i = 0; i < nodeList1.length; i++) {
                 var node = nodeList1[i];
-                node.addEventListener("change", function (evt) {
+                node.addEventListener('change', function (evt) {
                     if (evt.target.checked) redraw();
                 });
             }
             for (var i = 0; i < nodeList2.length; i++) {
                 var node = nodeList2[i];
-                node.addEventListener("change", function (evt) {
+                node.addEventListener('change', function (evt) {
                     if (evt.target.checked) redraw();
                 });
             }
@@ -298,4 +296,4 @@ var application = (function () {
     };
 })();
 
-window.addEventListener("load", application.main);
+window.addEventListener('load', application.main);

@@ -1,0 +1,22 @@
+{
+  "name": "paulocanedo.github.io",
+  "version": "0.0.1",
+  "description": "Paulo Canedo Website",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/paulocanedo/paulocanedo.github.io.git"
+  },
+  "author": "Paulo Canedo",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/paulocanedo/paulocanedo.github.io/issues"
+  },
+  "devDependencies": {
+    "broccoli": "^0.16.4",
+    "broccoli-babel-transpiler": "^5.3.1"
+  }
+}

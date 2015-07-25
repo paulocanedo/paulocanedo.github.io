@@ -27,8 +27,8 @@ canvas {
 }
 
 #chooseColorButton {
-    border-radius:12px;
-    width: 200px;
+    /*border-radius:12px;*/
+    width: 256px;
     height: 25px;
     background-color: black;
     border: 1px solid white;
