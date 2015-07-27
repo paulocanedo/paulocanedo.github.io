@@ -31,25 +31,6 @@ var dom_helper = (function () {
 
 let geometry = (() => {
     return {
-        lineIntersection(k, l, m, n) {
-            let A1 = l[1] - k[1];
-            let B1 = k[0] - l[0];
-            let C1 = A1 * k[0] + B1 * k[1];
-
-            let A2 = n[1] - m[1];
-            let B2 = m[0] - n[0];
-            let C2 = A2 * m[0] + B2 * m[1];
-
-            let det = A1 * B2 - A2 * B1;
-            if (det == 0.0) {
-                return null;
-            }
-
-            let x = (B2 * C1 - B1 * C2) / det;
-            let y = (A1 * C2 - A2 * C1) / det;
-
-            return vec2(x, y);
-        },
         screenToUnitaryCoords(bounds) {
             let cx = -1 + 2 * bounds.x / bounds.w;
             let cy = -1 + 2 * (bounds.h - bounds.y) / bounds.h;

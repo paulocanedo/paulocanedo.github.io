@@ -43,30 +43,20 @@ var geometry = (function () {
         radians: function radians(value) {
             return value / 180.0 * Math.PI;
         },
-        slope: function slope(x1, y1, x2, y2) {
+        slope: function slope(point1, point2) {
+            var x1 = point1[0],
+                y1 = point1[1],
+                x2 = point2[0],
+                y2 = point2[1];
             return (y2 - y1) / (x2 - x1);
         },
-        perpendicularSlope: function perpendicularSlope(x1, y1, x2, y2) {
-            return -(y2 - y1) / (x2 - x1);
-        },
-        perpendicularPoint: function perpendicularPoint(x, y, distance, pslp) {
-            var inverse = arguments.length <= 4 || arguments[4] === undefined ? false : arguments[4];
+        projectPoint: function projectPoint(point, distance, slope) {
+            var angle = arguments.length <= 3 || arguments[3] === undefined ? 0 : arguments[3];
 
-            var b = inverse ? Math.PI : 0;
-
-            var newX = x + distance * Math.sin(Math.atan(pslp) + b);
-            var newY = y + distance * Math.cos(Math.atan(pslp) + b);
+            var newX = point[0] + distance * Math.sin(Math.atan(slope) + angle);
+            var newY = point[1] + distance * Math.cos(Math.atan(slope) + angle);
 
             return vec2(newX, newY);
-        },
-        perpendicularSegment: function perpendicularSegment(x1, y1, x2, y2, distance) {
-            var inverse = arguments.length <= 5 || arguments[5] === undefined ? false : arguments[5];
-
-            var pslp = this.perpendicularSlope(x1, y1, x2, y2);
-            var p1 = this.perpendicularPoint(x1, y1, distance, pslp, inverse);
-            var p2 = this.perpendicularPoint(x2, y2, distance, pslp, inverse);
-
-            return [p1, p2];
         }
     };
 })();
@@ -78,7 +68,6 @@ var drawing = (function () {
 
     var vertices = [];
     var colors = [];
-    var _minInterpolateDistance = 1.0;
 
     var line_thick = (function () {
         var path = [];
@@ -86,15 +75,22 @@ var drawing = (function () {
         return {
             addVertex: function addVertex(vertex, color, lineWidth) {
                 path.push(vertex);
+                var length = path.length;
 
-                if (path.length > 1) {
-                    var i = path.length - 1;
-                    var start = path[i - 1];
-                    var end = path[i];
-                    var segment = geometry.perpendicularSegment(start[0], start[1], end[0], end[1], lineWidth / 2, false);
-                    var segmentI = geometry.perpendicularSegment(start[0], start[1], end[0], end[1], lineWidth / 2, true);
+                if (length > 1) {
+                    var thickness = lineWidth / 2;
+                    var start = path[length - 2];
+                    var end = path[length - 1];
 
-                    vertices.push(drawing.toUnitaryCoords(segment[0]), drawing.toUnitaryCoords(segmentI[0]), drawing.toUnitaryCoords(segment[1]), drawing.toUnitaryCoords(segmentI[1]));
+                    var line = subtract(end, start);
+                    var normal = normalize(vec2(-line[1], line[0]));
+
+                    var p1 = vec2(start[0] - thickness * normal[0], start[1] - thickness * normal[1]);
+                    var p2 = vec2(start[0] + thickness * normal[0], start[1] + thickness * normal[1]);
+                    var p3 = vec2(end[0] - thickness * normal[0], end[1] - thickness * normal[1]);
+                    var p4 = vec2(end[0] + thickness * normal[0], end[1] + thickness * normal[1]);
+
+                    vertices.push(drawing.toUnitaryCoords(p1), drawing.toUnitaryCoords(p2), drawing.toUnitaryCoords(p3), drawing.toUnitaryCoords(p4));
                     colors.push(color, color, color, color);
                 }
             },
@@ -112,7 +108,7 @@ var drawing = (function () {
         };
     })();
 
-    return Object.defineProperties({
+    return {
         init: function init(canvasName) {
             canvas = document.getElementById(canvasName);
 
@@ -155,7 +151,7 @@ var drawing = (function () {
             var color = arguments.length <= 1 || arguments[1] === undefined ? [0, 0, 0] : arguments[1];
             var lineWidth = arguments.length <= 2 || arguments[2] === undefined ? 1 : arguments[2];
 
-            if (line_thick.distanceFromLastVertex(vertex) < _minInterpolateDistance) {
+            if (line_thick.distanceFromLastVertex(vertex) < lineWidth / 2) {
                 return false;
             }
 
@@ -193,18 +189,7 @@ var drawing = (function () {
 
             gl.drawArrays(gl.TRIANGLE_STRIP, 0, vertices.length);
         }
-    }, {
-        minInterpolateDistance: {
-            get: function get() {
-                return _minInterpolateDistance;
-            },
-            set: function set(min) {
-                _minInterpolateDistance = min;
-            },
-            configurable: true,
-            enumerable: true
-        }
-    });
+    };
 })();
 
 var application = (function () {
@@ -212,8 +197,6 @@ var application = (function () {
     var mousePressed = false;
 
     var lineWidthCtrl = document.getElementById('lineWidthCtrl');
-    var minInterpolateDistanceCtrl = document.getElementById('minInterpolateDistanceCtrl');
-    drawing.minInterpolateDistance = parseInt(minInterpolateDistanceCtrl.value);
 
     return {
         main: function main() {
@@ -221,9 +204,7 @@ var application = (function () {
             canvas.addEventListener('mousedown', application.mouseDown);
             canvas.addEventListener('mousemove', application.mouseMove);
 
-            minInterpolateDistanceCtrl.addEventListener('change', function (evt) {
-                return drawing.minInterpolateDistance = parseInt(minInterpolateDistanceCtrl.value);
-            });
+            drawing.redraw();
         },
         mouseUp: function mouseUp(event) {
             mousePressed = false;
