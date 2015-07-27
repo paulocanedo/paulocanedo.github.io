@@ -31,6 +31,25 @@ var dom_helper = (function () {
 
 let geometry = (() => {
     return {
+        lineIntersection(k, l, m, n) {
+            let A1 = l[1] - k[1];
+            let B1 = k[0] - l[0];
+            let C1 = A1 * k[0] + B1 * k[1];
+
+            let A2 = n[1] - m[1];
+            let B2 = m[0] - n[0];
+            let C2 = A2 * m[0] + B2 * m[1];
+
+            let det = A1 * B2 - A2 * B1;
+            if (det == 0.0) {
+                return null;
+            }
+
+            let x = (B2 * C1 - B1 * C2) / det;
+            let y = (A1 * C2 - A2 * C1) / det;
+
+            return vec2(x, y);
+        },
         screenToUnitaryCoords(bounds) {
             let cx = -1 + 2 * bounds.x / bounds.w;
             let cy = -1 + 2 * (bounds.h - bounds.y) / bounds.h;
@@ -43,27 +62,16 @@ let geometry = (() => {
         radians(value) {
             return value / 180.0 * Math.PI;
         },
-        slope(x1, y1, x2, y2) {
+        slope(point1, point2) {
+            let x1 = point1[0], y1 = point1[1], x2 = point2[0], y2 = point2[1];
             return (y2 -y1) / (x2 -x1);
         },
-        perpendicularSlope(x1, y1, x2, y2) {
-            return -(y2 - y1) / (x2 - x1);
-        },
-        perpendicularPoint(x, y, distance, pslp, inverse = false) {
-            let b = inverse ? Math.PI : 0;
-
-            let newX = x + (distance * Math.sin(Math.atan(pslp) + b));
-            let newY = y + (distance * Math.cos(Math.atan(pslp) + b));
+        projectPoint(point, distance, slope, angle = 0) {
+            let newX = point[0] + (distance * Math.sin(Math.atan(slope) + angle));
+            let newY = point[1] + (distance * Math.cos(Math.atan(slope) + angle));
 
             return vec2(newX, newY);
-        },
-        perpendicularSegment(x1, y1, x2, y2, distance, inverse = false) {
-            let pslp = this.perpendicularSlope(x1, y1, x2, y2);
-            let p1 = this.perpendicularPoint(x1, y1, distance, pslp, inverse);
-            let p2 = this.perpendicularPoint(x2, y2, distance, pslp, inverse);
-
-            return [p1, p2];
-        },
+        }
     }
 })();
 
@@ -74,7 +82,6 @@ let drawing = (() => {
 
     let vertices = [];
     let colors = [];
-    let _minInterpolateDistance = 1.0;
 
     let line_thick = (() => {
       let path = [];
@@ -82,19 +89,26 @@ let drawing = (() => {
       return {
         addVertex(vertex, color, lineWidth) {
           path.push(vertex);
+          let length = path.length;
 
-          if(path.length > 1) {
-              let i        = path.length-1;
-              let start    = path[i-1];
-              let end      = path[i];
-              let segment  = geometry.perpendicularSegment(start[0], start[1], end[0], end[1], lineWidth/2, false);
-              let segmentI = geometry.perpendicularSegment(start[0], start[1], end[0], end[1], lineWidth/2, true);
+          if(length > 1) {
+              let thickness = lineWidth / 2;
+              let start = path[length-2];
+              let end   = path[length-1];
+
+              let line   = subtract(end, start);
+              let normal = normalize(vec2(-line[1], line[0]));
+
+              let p1 = vec2(start[0] - thickness * normal[0], start[1] - thickness * normal[1]);
+              let p2 = vec2(start[0] + thickness * normal[0], start[1] + thickness * normal[1]);
+              let p3 = vec2(  end[0] - thickness * normal[0],   end[1] - thickness * normal[1]);
+              let p4 = vec2(  end[0] + thickness * normal[0],   end[1] + thickness * normal[1]);
 
               vertices.push(
-                drawing.toUnitaryCoords(segment[0]),
-                drawing.toUnitaryCoords(segmentI[0]),
-                drawing.toUnitaryCoords(segment[1]),
-                drawing.toUnitaryCoords(segmentI[1])
+                drawing.toUnitaryCoords(p1),
+                drawing.toUnitaryCoords(p2),
+                drawing.toUnitaryCoords(p3),
+                drawing.toUnitaryCoords(p4)
               );
               colors.push(color, color, color, color);
           }
@@ -114,8 +128,6 @@ let drawing = (() => {
     })();
 
     return {
-        get minInterpolateDistance() { return _minInterpolateDistance; },
-        set minInterpolateDistance(min) { _minInterpolateDistance = min; },
         init(canvasName) {
             canvas = document.getElementById( canvasName );
 
@@ -153,7 +165,7 @@ let drawing = (() => {
             gl.enableVertexAttribArray( vColor );
         },
         addToCurrentBrush(vertex, color = [0, 0, 0], lineWidth = 1) {
-            if(line_thick.distanceFromLastVertex(vertex) < _minInterpolateDistance) {
+            if(line_thick.distanceFromLastVertex(vertex) < lineWidth/2) {
                 return false;
             }
 
@@ -200,8 +212,6 @@ let application = (() => {
     let mousePressed = false;
 
     let lineWidthCtrl = document.getElementById('lineWidthCtrl');
-    let minInterpolateDistanceCtrl = document.getElementById('minInterpolateDistanceCtrl');
-    drawing.minInterpolateDistance = parseInt(minInterpolateDistanceCtrl.value);
 
     return {
         main() {
@@ -209,8 +219,7 @@ let application = (() => {
             canvas.addEventListener('mousedown', application.mouseDown);
             canvas.addEventListener('mousemove', application.mouseMove);
 
-            minInterpolateDistanceCtrl.addEventListener('change',
-              evt => drawing.minInterpolateDistance = parseInt(minInterpolateDistanceCtrl.value));
+            drawing.redraw();
         },
         mouseUp(event) {
             mousePressed = false;
