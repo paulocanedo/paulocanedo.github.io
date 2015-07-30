@@ -19,7 +19,21 @@ h3 {
 
 canvas {
     border: 0px solid black;
-    cursor: crosshair;
+}
+
+
+select {
+    width: 240px;
+}
+
+.canvas-control > ul {
+    background-color: white;
+    color: black;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    line-height: 1.8em;
+    list-style-type: none;
 }
 
 .bordered {

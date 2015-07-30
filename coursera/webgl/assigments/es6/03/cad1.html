@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assigment 03, Coursera WebGL</title>
+    <link rel="stylesheet" href="/coursera/webgl/styles/pure-min.css">
+    <link rel="stylesheet" href="/coursera/webgl/styles/grids-responsive-min.css">
+    <link rel="stylesheet" href="/coursera/webgl/styles/main.css">
+</head>
+<body>
+
+<div id="layout" class="pure-g">
+    <div class="sidebar pure-u-1 pure-u-md-1-4">
+        <div class="header">
+
+            <fieldset class="canvas-control">
+                <legend>Color</legend>
+                <canvas id="gl-canvas-color" width="256" height="128">
+                    Oops ... your browser doesn't support the HTML5 canvas element
+                </canvas>
+                <form class="pure-form">
+                    <input type="button" value="" id="chooseColorButton" />
+                </form>
+            </fieldset>
+
+            <fieldset class="canvas-control">
+                <legend>Object</legend>
+                <ul>
+                    <li data-value="cube">Cube</li>
+                    <li data-value="sphere">Sphere</li>
+                    <li data-value="cylinder">Cylinder</li>
+                    <li data-value="cone">Cone</li>
+                </ul>
+            </fieldset>
+
+            <fieldset class="canvas-control">
+                <legend>World</legend>
+                <form class="pure-form">
+                    <div>
+                        <label for="worldRotationXCtrl">X</span>
+                        <input id="worldRotationXCtrl" type="range" value="0" min="0" max="360" step="1">
+                    </div>
+
+                    <div>
+                        <label for="worldRotationYCtrl">Y</span>
+                        <input id="worldRotationYCtrl" type="range" value="0" min="0" max="360" step="1">
+                    </div>
+
+                    <div>
+                        <label for="worldRotationZCtrl">Z</span>
+                        <input id="worldRotationZCtrl" type="range" value="0" min="0" max="360" step="1">
+                    </div>
+                </form>
+            </fieldset>
+
+        </div>
+    </div>
+
+    <div class="content pure-u-1 pure-u-md-3-4">
+        <div>
+            <div class="posts">
+                <h1 class="content-subhead">
+                    <a href="https://class.coursera.org/webgl-001">Coursera - Interactive Computer Graphics with WebGL</a>
+                    Student: Paulo Canedo Costa Rodrigues
+                </h1>
+
+                <section class="post">
+                    <header class="post-header">
+                        <h2 id="fpsLabel" class="post-title">CAD 1</h2>
+                    </header>
+
+                    <div class="post-description">
+                        <canvas id="gl-canvas" width="720" height="720" class="bordered">
+                            Oops ... your browser doesn't support the HTML5 canvas element
+                        </canvas>
+                        <p>
+                          This is a transpiled version, if you want to see the original code,
+                          <a href="/coursera/webgl/assigments/es6/02/paint.html">click here to see original ES6 version (works only with firefox)</a>
+                        </p>
+                    </div>
+                </section>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script id="vertex-shader" type="x-shader/x-vertex">
+attribute  vec4 vPosition;
+attribute  vec4 vColor;
+varying vec4 fColor;
+
+uniform vec3 worldRotation;
+
+void main()
+{
+    // Compute the sines and cosines of theta for each of
+    //   the three axes in one computation.
+    // float theta = 3.0;
+    vec3 angles = radians( worldRotation );
+    vec3 c = cos( angles );
+    vec3 s = sin( angles );
+
+    // Remeber: these matrices are column-major
+    mat4 rx = mat4(
+            1.0,  0.0,  0.0, 0.0,
+		    0.0,  c.x,  s.x, 0.0,
+		    0.0, -s.x,  c.x, 0.0,
+		    0.0,  0.0,  0.0, 1.0
+    );
+
+    mat4 ry = mat4(
+            c.y, 0.0, -s.y, 0.0,
+		    0.0, 1.0,  0.0, 0.0,
+		    s.y, 0.0,  c.y, 0.0,
+		    0.0, 0.0,  0.0, 1.0
+    );
+
+    mat4 rz = mat4(
+            c.z, -s.z, 0.0, 0.0,
+		    s.z,  c.z, 0.0, 0.0,
+		    0.0,  0.0, 1.0, 0.0,
+		    0.0,  0.0, 0.0, 1.0
+    );
+
+    fColor = vColor;
+    gl_Position = rz * ry * rx * vPosition;
+}
+</script>
+
+<script id="fragment-shader" type="x-shader/x-fragment">
+precision mediump float;
+
+varying vec4 fColor;
+uniform vec4 generalColor;
+
+void
+main()
+{
+    // gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+    gl_FragColor = fColor;
+}
+</script>
+
+<script id="vs-choose-color" type="x-shader/x-vertex">
+attribute vec4 vPosition;
+attribute vec4 vColor;
+varying vec4 fColor;
+
+void main()
+{
+    gl_Position = vPosition;
+
+    fColor = vColor;
+}
+</script>
+
+<script id="fs-choose-color" type="x-shader/x-fragment">
+precision mediump float;
+
+varying vec4 fColor;
+
+void
+main()
+{
+    float y = gl_FragCoord.y / 128.0;//canvas height
+    if(y > .5) {
+      gl_FragColor = mix(fColor, vec4(1.0, 1.0, 1.0, 1.0), (y-0.5)*2.0);
+    } else {
+      gl_FragColor = mix(vec4(0.0, 0.0, 0.0, 1.0), fColor, y*2.0);
+    }
+}
+</script>
+
+<script type="application/javascript" src="/coursera/webgl/Common/webgl-utils.js"></script>
+<script type="application/javascript" src="/coursera/webgl/Common/initShaders.js"></script>
+<script type="application/javascript" src="/coursera/webgl/Common/MV.js"></script>
+<script type="application/javascript" src="/coursera/webgl/Common/flatten.js"></script>
+<!-- <script type="application/javascript" src="/coursera/webgl/assigments/dist/browser-polyfill.js"></script> -->
+<script type="application/javascript;version=1.7" src="cad1.js"></script>
+<script type="application/javascript;version=1.7" src="color_choose.js"></script>
+</body>
+</html>
