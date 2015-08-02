@@ -124,6 +124,7 @@ void main()
 		    0.0,  0.0, 0.0, 1.0
     );
 
+    // fColor = vec4(vPosition.xyz, 1.0);
     fColor = vColor;
     gl_Position = rz * ry * rx * vPosition;
 }
@@ -133,13 +134,16 @@ void main()
 precision mediump float;
 
 varying vec4 fColor;
-uniform vec4 generalColor;
+uniform int wireframe;
 
 void
 main()
 {
-    // gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
-    gl_FragColor = fColor;
+    if(wireframe == 0) {
+        gl_FragColor = fColor;
+    } else {
+        gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+    }
 }
 </script>
 
@@ -178,6 +182,10 @@ main()
 <script type="application/javascript" src="/coursera/webgl/Common/MV.js"></script>
 <script type="application/javascript" src="/coursera/webgl/Common/flatten.js"></script>
 <!-- <script type="application/javascript" src="/coursera/webgl/assigments/dist/browser-polyfill.js"></script> -->
+<script type="application/javascript;version=1.7" src="Cube.js"></script>
+<script type="application/javascript;version=1.7" src="Cone.js"></script>
+<script type="application/javascript;version=1.7" src="Cylinder.js"></script>
+<script type="application/javascript;version=1.7" src="Sphere.js"></script>
 <script type="application/javascript;version=1.7" src="cad1.js"></script>
 <script type="application/javascript;version=1.7" src="color_choose.js"></script>
 </body>
