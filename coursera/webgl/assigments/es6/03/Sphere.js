@@ -51,10 +51,16 @@ let Sphere = (() => {
                 return color;
             });
 
+            let _id = uuid.new;
             return {
+                get id() { return _id },
                 get colors() { return _colors; },
                 get vertices() { return _vertices; },
                 get indices() { return _indicesTriangles; },
+
+                translate(x, y, z) {
+                    _vertices = geometry.translateObject(x, y, z, _vertices);
+                }
             };
         },
     };

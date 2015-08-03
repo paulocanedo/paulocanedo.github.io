@@ -35,23 +35,12 @@
             </fieldset>
 
             <fieldset class="canvas-control">
-                <legend>World</legend>
-                <form class="pure-form">
-                    <div>
-                        <label for="worldRotationXCtrl">X</span>
-                        <input id="worldRotationXCtrl" type="range" value="0" min="0" max="360" step="1">
-                    </div>
-
-                    <div>
-                        <label for="worldRotationYCtrl">Y</span>
-                        <input id="worldRotationYCtrl" type="range" value="0" min="0" max="360" step="1">
-                    </div>
-
-                    <div>
-                        <label for="worldRotationZCtrl">Z</span>
-                        <input id="worldRotationZCtrl" type="range" value="0" min="0" max="360" step="1">
-                    </div>
-                </form>
+                <legend>Mode</legend>
+                <ul>
+                    <li data-value="creator">Object Creator</li>
+                    <li data-value="camera">Camera</li>
+                    <li data-value="editor">Editor</li>
+                </ul>
             </fieldset>
 
         </div>
@@ -92,6 +81,8 @@ attribute  vec4 vColor;
 varying vec4 fColor;
 
 uniform vec3 worldRotation;
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
 
 void main()
 {
@@ -126,7 +117,9 @@ void main()
 
     // fColor = vec4(vPosition.xyz, 1.0);
     fColor = vColor;
-    gl_Position = rz * ry * rx * vPosition;
+    // gl_Position = modelViewMatrix * projectionMatrix * vPosition;
+    // gl_Position = projectionMatrix * modelViewMatrix * vPosition;
+    gl_Position = rz * ry * rx * projectionMatrix * vPosition;
 }
 </script>
 
@@ -190,10 +183,13 @@ main()
 <script type="application/javascript" src="/coursera/webgl/Common/MV.js"></script>
 <script type="application/javascript" src="/coursera/webgl/Common/flatten.js"></script>
 <!-- <script type="application/javascript" src="/coursera/webgl/assigments/dist/browser-polyfill.js"></script> -->
+<script type="application/javascript;version=1.7" src="uuid.js"></script>
+<script type="application/javascript;version=1.7" src="geometry.js"></script>
 <script type="application/javascript;version=1.7" src="Cube.js"></script>
 <script type="application/javascript;version=1.7" src="Cone.js"></script>
 <script type="application/javascript;version=1.7" src="Cylinder.js"></script>
 <script type="application/javascript;version=1.7" src="Sphere.js"></script>
+<script type="application/javascript;version=1.7" src="dom.js"></script>
 <script type="application/javascript;version=1.7" src="cad1.js"></script>
 <script type="application/javascript;version=1.7" src="color_choose.js"></script>
 </body>

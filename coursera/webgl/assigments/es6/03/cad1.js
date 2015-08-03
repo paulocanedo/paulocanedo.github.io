@@ -20,9 +20,9 @@ let drawing = (() => {
             get thetaX() { return _rotation[0]; },
             get thetaY() { return _rotation[1]; },
             get thetaZ() { return _rotation[2]; },
-            set thetaX(rx_) { _rotation[0] = rx_; },
-            set thetaY(ry_) { _rotation[1] = ry_; },
-            set thetaZ(rz_) { _rotation[2] = rz_; },
+            set thetaX(rx_) { _rotation[0] = parseInt(rx_); },
+            set thetaY(ry_) { _rotation[1] = parseInt(ry_); },
+            set thetaZ(rz_) { _rotation[2] = parseInt(rz_); },
             get rotationMatrix() { return _rotation; }
         }
     })();
@@ -51,8 +51,13 @@ let drawing = (() => {
         append(object) {
             objects.push(object);
             bufferInfo.colors.values = bufferInfo.colors.values.concat(object.colors);
-            bufferInfo.indices.values = bufferInfo.indices.values.concat(object.indices);
-            bufferInfo.vertices.values = bufferInfo.vertices.values.concat(object.vertices);
+            let vlength = bufferInfo.vertices.values.length;
+            for(let indice of object.indices) {
+                bufferInfo.indices.values.push(vlength + indice);
+            }
+            for(let vertice of object.vertices) {
+                bufferInfo.vertices.values.push(vertice);
+            }
 
             let flush = true;
             if(flush) {
@@ -69,6 +74,30 @@ let drawing = (() => {
         },
         render() {
             gl.useProgram( program );
+
+            // let radius = 200;
+            // let theta = radians(parseInt(document.getElementById('worldRotationXCtrl').value));
+            // let phi   = radians(parseInt(document.getElementById('worldRotationYCtrl').value));
+            let modelViewMatrixLoc = gl.getUniformLocation(program, 'modelViewMatrix');
+            let projectionMatrixLoc = gl.getUniformLocation(program, 'projectionMatrix');
+            //
+            // var eye = vec3( radius*Math.sin(theta)*Math.cos(phi),
+            //                 radius*Math.sin(theta)*Math.sin(phi),
+            //                 radius*Math.cos(theta));
+
+            const at = vec3(0.0, 0.0, 0.0);
+            const up = vec3(0.0, 1.0, 0.0);
+
+            var modelViewMatrix = lookAt( [100, 250, 200], at, up );
+            // var modelViewMatrix = lookAt( eye, at, up );
+            var projectionMatrix = perspective(radians(90), canvas.width / canvas.height, -180, 180);
+            // var projectionMatrix = ortho( -2, 2, -2, 2, -2, 2 );
+            // var projectionMatrix = ortho( left, right, bottom, ytop, near, far );
+
+            gl.uniformMatrix4fv( modelViewMatrixLoc, false, flatten(modelViewMatrix) );
+            // gl.uniformMatrix4fv( projectionMatrixLoc, false, flatten(projectionMatrix) );
+
+            gl.uniformMatrix4fv( projectionMatrixLoc, false, flatten(ortho(-8, 8, -8, 8, -8, 8)) );
 
             let vPosition = gl.getAttribLocation( program, "vPosition" );
             gl.bindBuffer( gl.ARRAY_BUFFER, bufferInfo.vertices.bufferId );
@@ -101,38 +130,65 @@ let application = (() => {
     let canvas = drawing.init("gl-canvas");
     let worldRotationXCtrl = document.getElementById('worldRotationXCtrl');
     let worldRotationYCtrl = document.getElementById('worldRotationYCtrl');
-    let worldRotationZCtrl = document.getElementById('worldRotationZCtrl');
 
-    drawing.world.thetaX = worldRotationXCtrl.value;
-    drawing.world.thetaY = worldRotationYCtrl.value;
-    drawing.world.thetaZ = worldRotationZCtrl.value;
+    let mouse = {pressed: false, lastPosition: null, startRotationX: 0, startRotationY: 0};
 
     return {
+        mousedown(evt) {
+            mouse.pressed = true;
+            mouse.lastPosition = dom_helper.getClickPosition(evt);
+            mouse.startRotationY = drawing.world.thetaY;
+            mouse.startRotationX = drawing.world.thetaX;
+        },
+        mousemove(evt) {
+            if(mouse.pressed && mouse.lastPosition) {
+                let current = dom_helper.getClickPosition(evt);
+                let dx = mouse.lastPosition[0] - current[0];
+                let dy = mouse.lastPosition[1] - current[1];
+
+                drawing.world.thetaY = mouse.startRotationY + 360 * dx / canvas.height;
+                drawing.world.thetaX = mouse.startRotationX + 360 * dy / canvas.width;
+            }
+            requestAnimFrame(drawing.render);
+        },
+        mouseup(evt) {
+            mouse.pressed = false;
+            mouse.lastPosition = null;
+            mouse.startRotationY = 0;
+            mouse.startRotationX = 0;
+        },
         main() {
+            canvas.addEventListener('mousedown', application.mousedown);
+            canvas.addEventListener('mousemove', application.mousemove);
+            canvas.addEventListener('mouseup', application.mouseup);
+
             let cube1   = Cube.create();
             let sphere1 = Sphere.create();
+            let sphere2 = Sphere.create();
             let cone1 = Cone.create();
+            let cone2 = Cone.create();
             let cylinder1 = Cylinder.create();
+            let cylinder2 = Cylinder.create();
 
+            cone1.translate(-5, 5, 0);
+            cone2.translate(5, -5, 0);
+            cylinder1.translate(5, 0, 0);
+            cylinder2.translate(5, 5, 0);
+            sphere1.translate(-5, 0, 0);
+            sphere2.translate(-5, -5, 0);
+            cube1.translate(0, 0, 2);
+            // cube3.translate(5, 5, 0);
+
+            drawing.append(cube1);
+            drawing.append(sphere1);
+            drawing.append(sphere2);
             drawing.append(cylinder1);
-            // drawing.append(cone1);
-            // drawing.append(sphere1);
-            // drawing.append(cube1);
+            drawing.append(cylinder2);
+            drawing.append(cone1);
+            drawing.append(cone2);
+            drawing.append(Cube.create());
 
             drawing.render();
-
-            worldRotationXCtrl.addEventListener('input', evt => {
-                drawing.world.thetaX = evt.target.value;
-                requestAnimFrame(drawing.render);
-            });
-            worldRotationYCtrl.addEventListener('input', evt => {
-                drawing.world.thetaY = evt.target.value;
-                requestAnimFrame(drawing.render);
-            });
-            worldRotationZCtrl.addEventListener('input', evt => {
-                drawing.world.thetaZ = evt.target.value;
-                requestAnimFrame(drawing.render);
-            });
         }
     };
 })();

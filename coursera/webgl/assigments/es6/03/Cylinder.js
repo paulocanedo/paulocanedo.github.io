@@ -33,7 +33,7 @@ let Cylinder = (() => {
 
     return {
         create(map) {
-            let info = build(0.8, 0.4, 32);
+            let info = build(.5, .5, 32);
             let _vertices = info.vertices;
             let _indicesTriangles = info.indices;
             let _colors = _vertices.map(elem => {
@@ -47,10 +47,15 @@ let Cylinder = (() => {
                 return color;
             });
 
+            let _id = uuid.new;
             return {
+                get id() { return _id },
                 get colors() { return _colors; },
                 get vertices() { return _vertices; },
                 get indices() { return _indicesTriangles; },
+                translate(x, y, z) {
+                    _vertices = geometry.translateObject(x, y, z, _vertices);
+                }
             };
         },
     };
