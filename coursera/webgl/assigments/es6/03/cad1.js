@@ -1,16 +1,5 @@
 "use strict";
 
-let geometry = (() => {
-    return {
-        screenToUnitaryCoords(bounds) {
-            let cx = -1 + 2 * bounds.x / bounds.w;
-            let cy = -1 + 2 * (bounds.h - bounds.y) / bounds.h;
-
-            return vec2(cx, cy);
-        },
-    }
-})();
-
 let drawing = (() => {
     let gl;
     let canvas;

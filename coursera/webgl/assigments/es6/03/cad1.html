@@ -152,10 +152,17 @@ attribute vec4 vPosition;
 attribute vec4 vColor;
 varying vec4 fColor;
 
+uniform vec2 dimension;
+varying float height;
+
+
 void main()
 {
-    gl_Position = vPosition;
+    float x = -1.0 + 2.0 * vPosition.x / dimension[0];
+    float y = -1.0 + 2.0 * (dimension[1] - vPosition.y) / dimension[1];
+    gl_Position = vec4(x, y, 1.0, 1.0);
 
+    height = dimension[1];
     fColor = vColor;
 }
 </script>
@@ -164,11 +171,12 @@ void main()
 precision mediump float;
 
 varying vec4 fColor;
+varying float height;
 
 void
 main()
 {
-    float y = gl_FragCoord.y / 128.0;//canvas height
+    float y = gl_FragCoord.y / height;//canvas height
     if(y > .5) {
       gl_FragColor = mix(fColor, vec4(1.0, 1.0, 1.0, 1.0), (y-0.5)*2.0);
     } else {

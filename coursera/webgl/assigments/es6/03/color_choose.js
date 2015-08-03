@@ -53,8 +53,6 @@ let drawing_color = (() => {
             let rgb = [pixels[0] / 255, pixels[1] / 255, pixels[2] / 255];
             application_color.color = rgb;
             colorButton.style.color = rgb[0] * rgb[1] * rgb[2] > 0.0001 ? 'black' : 'white';
-
-            drawing.redraw();
         },
         mouseDown(event) {
         },
@@ -96,13 +94,11 @@ let drawing_color = (() => {
             vertices = newPolygon;
         },
         pushVertex(vertex) {
-            let c = geometry.screenToUnitaryCoords({x: vertex[0], y: vertex[1], w: canvas.width, h: canvas.height});
-            vertices.push(c);
+            vertices.push(vertex);
         },
         pushVertices(vertices_) {
             for(let v of vertices_) {
-                let c = geometry.screenToUnitaryCoords({x: v[0], y: v[1], w: canvas.width, h: canvas.height});
-                vertices.push(c);
+                vertices.push(v);
             }
         },
         clear() {
@@ -110,6 +106,9 @@ let drawing_color = (() => {
         },
         render() {
             gl.clear( gl.COLOR_BUFFER_BIT );
+
+            let dimensionLoc = gl.getUniformLocation( program, 'dimension' );
+            gl.uniform2f( dimensionLoc, canvas.width, canvas.height);
 
             gl.drawArrays( gl.TRIANGLE_STRIP, 0, vertices.length );
         }
