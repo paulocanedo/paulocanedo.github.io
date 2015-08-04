@@ -15,22 +15,8 @@
         <div class="header">
 
             <fieldset class="canvas-control">
-                <legend>Color</legend>
-                <canvas id="gl-canvas-color" width="256" height="128">
-                    Oops ... your browser doesn't support the HTML5 canvas element
-                </canvas>
-                <form class="pure-form">
-                    <input type="button" value="" id="chooseColorButton" />
-                </form>
-            </fieldset>
-
-            <fieldset class="canvas-control">
-                <legend>Object</legend>
-                <ul>
-                    <li data-value="cube">Cube</li>
-                    <li data-value="sphere">Sphere</li>
-                    <li data-value="cylinder">Cylinder</li>
-                    <li data-value="cone">Cone</li>
+                <legend>Objects</legend>
+                <ul id="objects-list">
                 </ul>
             </fieldset>
 
@@ -38,9 +24,39 @@
                 <legend>Mode</legend>
                 <ul>
                     <li data-value="creator">Object Creator</li>
-                    <li data-value="camera">Camera</li>
+                    <li data-value="camera" class="active">Camera</li>
                     <li data-value="editor">Editor</li>
                 </ul>
+            </fieldset>
+
+            <fieldset class="canvas-control">
+                <legend>Transformation</legend>
+                <form class="pure-form">
+                    <label for="translateTransform">
+                        <input id="translateTransform" name="transformation" value="translate" type="radio" checked>
+                        Translate&nbsp;
+                    </label>
+                    <label for="scaleTransform">
+                        <input id="scaleTransform" name="transformation" value="scale" type="radio">
+                        Scale&nbsp;
+                    </label>
+                    <label for="rotationTransform">
+                        <input id="rotationTransform" name="transformation" value="rotate" type="radio">
+                        Rotation
+                    </label>
+
+                    <div class="transformation-control">
+                        <p>
+                            X <input id="transformX" type="number" value="1.00" step="0.01">
+                        </p>
+                        <p>
+                            Y <input id="transformY" type="number" value="1.00" step="0.01">
+                        </p>
+                        <p>
+                            Z <input id="transformZ" type="number" value="1.00" step="0.01">
+                        </p>
+                    </div>
+                </form>
             </fieldset>
 
         </div>
@@ -55,18 +71,18 @@
                 </h1>
 
                 <section class="post">
-                    <header class="post-header">
+                    <!-- <header class="post-header">
                         <h2 id="fpsLabel" class="post-title">CAD 1</h2>
-                    </header>
+                    </header> -->
 
                     <div class="post-description">
                         <canvas id="gl-canvas" width="720" height="720" class="bordered">
                             Oops ... your browser doesn't support the HTML5 canvas element
                         </canvas>
-                        <p>
+                        <!-- <p>
                           This is a transpiled version, if you want to see the original code,
                           <a href="/coursera/webgl/assigments/es6/02/paint.html">click here to see original ES6 version (works only with firefox)</a>
-                        </p>
+                        </p> -->
                     </div>
                 </section>
             </div>
@@ -135,7 +151,7 @@ main()
     if(wireframe == 0) {
         gl_FragColor = fColor;
     } else {
-        gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        gl_FragColor = vec4(0.0, 0.0, 0.0, .3);
     }
 }
 </script>
@@ -183,7 +199,7 @@ main()
 <script type="application/javascript" src="/coursera/webgl/Common/MV.js"></script>
 <script type="application/javascript" src="/coursera/webgl/Common/flatten.js"></script>
 <!-- <script type="application/javascript" src="/coursera/webgl/assigments/dist/browser-polyfill.js"></script> -->
-<script type="application/javascript;version=1.7" src="uuid.js"></script>
+<script type="application/javascript;version=1.7" src="ObjectManager.js"></script>
 <script type="application/javascript;version=1.7" src="geometry.js"></script>
 <script type="application/javascript;version=1.7" src="Cube.js"></script>
 <script type="application/javascript;version=1.7" src="Cone.js"></script>
@@ -191,6 +207,6 @@ main()
 <script type="application/javascript;version=1.7" src="Sphere.js"></script>
 <script type="application/javascript;version=1.7" src="dom.js"></script>
 <script type="application/javascript;version=1.7" src="cad1.js"></script>
-<script type="application/javascript;version=1.7" src="color_choose.js"></script>
+<!-- <script type="application/javascript;version=1.7" src="color_choose.js"></script> -->
 </body>
 </html>

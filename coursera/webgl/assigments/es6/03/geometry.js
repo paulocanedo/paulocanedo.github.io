@@ -13,10 +13,9 @@ let geometry = (() => {
             }
             return result;
         },
-        translateObject(x, y, z, vertices) {
-            let tm = translate(x,y,z);
+        translateObject(translateMatrix, vertices) {
             for(let i=0; i<vertices.length; i++) {
-                vertices[i] = geometry.multMatriceVector(tm, vec4(vertices[i], 1)).slice(0, 3);
+                vertices[i] = geometry.multMatriceVector(translateMatrix, vec4(vertices[i], 1)).slice(0, 3);
             }
             return vertices;
         }

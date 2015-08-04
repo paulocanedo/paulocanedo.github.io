@@ -49,7 +49,11 @@ let drawing = (() => {
             bufferInfo.vertices.bufferId = gl.createBuffer();
         },
         append(object) {
+            this.appendObject(object);
             objects.push(object);
+            this.upload();
+        },
+        appendObject(object) {
             bufferInfo.colors.values = bufferInfo.colors.values.concat(object.colors);
             let vlength = bufferInfo.vertices.values.length;
             for(let indice of object.indices) {
@@ -58,19 +62,26 @@ let drawing = (() => {
             for(let vertice of object.vertices) {
                 bufferInfo.vertices.values.push(vertice);
             }
+        },
+        rebuild() {
+            bufferInfo.colors.values = [];
+            bufferInfo.indices.values = [];
+            bufferInfo.vertices.values = [];
 
-            let flush = true;
-            if(flush) {
-                gl.bindBuffer( gl.ARRAY_BUFFER, bufferInfo.vertices.bufferId );
-                gl.bufferData( gl.ARRAY_BUFFER, flatten(bufferInfo.vertices.values), gl.STATIC_DRAW );
-
-                gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, bufferInfo.indices.bufferId );
-                gl.bufferData( gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(bufferInfo.indices.values), gl.STATIC_DRAW );
-
-                gl.bindBuffer( gl.ARRAY_BUFFER, bufferInfo.colors.bufferId );
-                gl.bufferData( gl.ARRAY_BUFFER, flatten(bufferInfo.colors.values), gl.STATIC_DRAW );
+            for(let object of objects) {
+                this.appendObject(object);
             }
+            this.upload();
+        },
+        upload() {
+            gl.bindBuffer( gl.ARRAY_BUFFER, bufferInfo.vertices.bufferId );
+            gl.bufferData( gl.ARRAY_BUFFER, flatten(bufferInfo.vertices.values), gl.STATIC_DRAW );
 
+            gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, bufferInfo.indices.bufferId );
+            gl.bufferData( gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(bufferInfo.indices.values), gl.STATIC_DRAW );
+
+            gl.bindBuffer( gl.ARRAY_BUFFER, bufferInfo.colors.bufferId );
+            gl.bufferData( gl.ARRAY_BUFFER, flatten(bufferInfo.colors.values), gl.STATIC_DRAW );
         },
         render() {
             gl.useProgram( program );
@@ -128,8 +139,9 @@ let drawing = (() => {
 
 let application = (() => {
     let canvas = drawing.init("gl-canvas");
-    let worldRotationXCtrl = document.getElementById('worldRotationXCtrl');
-    let worldRotationYCtrl = document.getElementById('worldRotationYCtrl');
+    let transformX = document.getElementById('transformX');
+    let transformY = document.getElementById('transformY');
+    let transformZ = document.getElementById('transformZ');
 
     let mouse = {pressed: false, lastPosition: null, startRotationX: 0, startRotationY: 0};
 
@@ -162,31 +174,38 @@ let application = (() => {
             canvas.addEventListener('mousemove', application.mousemove);
             canvas.addEventListener('mouseup', application.mouseup);
 
-            let cube1   = Cube.create();
-            let sphere1 = Sphere.create();
-            let sphere2 = Sphere.create();
-            let cone1 = Cone.create();
-            let cone2 = Cone.create();
-            let cylinder1 = Cylinder.create();
-            let cylinder2 = Cylinder.create();
+            transformX.addEventListener('change', evt => {
+                let value = parseInt(evt.target.value);
+                ObjectManager.find(0).translate(value, 0, 0);
+                drawing.rebuild();
+                requestAnimFrame(drawing.render);
+            });
 
-            cone1.translate(-5, 5, 0);
-            cone2.translate(5, -5, 0);
-            cylinder1.translate(5, 0, 0);
-            cylinder2.translate(5, 5, 0);
-            sphere1.translate(-5, 0, 0);
-            sphere2.translate(-5, -5, 0);
-            cube1.translate(0, 0, 2);
-            // cube3.translate(5, 5, 0);
-
-            drawing.append(cube1);
-            drawing.append(sphere1);
-            drawing.append(sphere2);
-            drawing.append(cylinder1);
-            drawing.append(cylinder2);
-            drawing.append(cone1);
-            drawing.append(cone2);
-            drawing.append(Cube.create());
+            // let cube1   = ObjectManager.buildObject('cube');
+            // let sphere1 = ObjectManager.buildObject('sphere');
+            // let sphere2 = ObjectManager.buildObject('sphere');
+            // let cone1 = ObjectManager.buildObject('cone');
+            // let cone2 = ObjectManager.buildObject('cone');
+            // let cylinder1 = ObjectManager.buildObject('cylinder');
+            // let cylinder2 = ObjectManager.buildObject('cylinder');
+            //
+            // cone1.translate(-5, 5, 0);
+            // cone2.translate(5, -5, 0);
+            // cylinder1.translate(5, 0, 0);
+            // cylinder2.translate(5, 5, 0);
+            // sphere1.translate(-5, 0, 0);
+            // sphere2.translate(-5, -5, 0);
+            // cube1.translate(0, 0, 2);
+            // // cube3.translate(5, 5, 0);
+            //
+            // drawing.append(cube1);
+            // drawing.append(sphere1);
+            // drawing.append(sphere2);
+            // drawing.append(cylinder1);
+            // drawing.append(cylinder2);
+            // drawing.append(cone1);
+            // drawing.append(cone2);
+            drawing.append(ObjectManager.buildObject('cube'));
 
             drawing.render();
         }

@@ -31,8 +31,10 @@ let Cone = (() => {
     };
 
     return {
-        create(map) {
-            let info = build(1, 32);
+        create({id, radius, bands}) {
+            let info = build(radius, bands);
+
+            let _id = id;
             let _vertices = info.vertices;
             let _indicesTriangles = info.indices;
             let _colors = _vertices.map(elem => {
@@ -42,16 +44,15 @@ let Cone = (() => {
                     Math.abs(elem[1]),
                     Math.abs(elem[2]),
                     1.0);
-                // return vec4(0,0,1,1);
                 return color;
             });
 
-            let _id = uuid.new;
             return {
                 get id() { return _id },
                 get colors() { return _colors; },
                 get vertices() { return _vertices; },
                 get indices() { return _indicesTriangles; },
+                toString() { return `Cone [${_id}]`; },
 
                 translate(x, y, z) {
                     _vertices = geometry.translateObject(x, y, z, _vertices);

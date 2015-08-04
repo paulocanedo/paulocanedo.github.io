@@ -36,9 +36,10 @@ let Sphere = (() => {
     };
 
     return {
-        create(map) {
-            let bands = 32;
-            let info = build(1, bands, bands);
+        create({id, radius, bands}) {
+            let info = build(radius, bands, bands);
+
+            let _id = id;
             let _vertices = info.vertices;
             let _indicesTriangles = info.indices;
             let _colors = _vertices.map(elem => {
@@ -51,12 +52,12 @@ let Sphere = (() => {
                 return color;
             });
 
-            let _id = uuid.new;
             return {
                 get id() { return _id },
                 get colors() { return _colors; },
                 get vertices() { return _vertices; },
                 get indices() { return _indicesTriangles; },
+                toString() { return `Sphere [${_id}]`; },
 
                 translate(x, y, z) {
                     _vertices = geometry.translateObject(x, y, z, _vertices);

@@ -30,21 +30,29 @@ let Cube = (() => {
         2,6,1,6,1,5,
         1,5,0,5,0,4
     ];
+    // let _wireIndices = [3,2,1,0,4,7,3,7,6,2,6,5,1,0,4,5,4,7,6,2,3,0]; //LINE_STRIP
 
     return {
-        create(map) {
-            // let _wireIndices = [3,2,1,0,4,7,3,7,6,2,6,5,1,0,4,5,4,7,6,2,3,0]; //LINE_STRIP
-            let _vertices    = buildRect(0,0,0.5, 1, 1).concat(buildRect(0,0,-0.5, 1, 1));
-            let _colors      = multiColor;
+        create({id}) {
+            let _id       = id;
+            let _vertices = buildRect(0,0,0.5, 1, 1).concat(buildRect(0,0,-0.5, 1, 1));
+            let _colors   = multiColor;
+            let translateMatrix = translate(0, 0, 0);
+            // let scaleMatrix     = scale(1, 1, 1);
 
-            let _id = uuid.new;
             return {
                 get id() { return _id },
                 get colors() { return _colors; },
-                get vertices() { return _vertices; },
+                get vertices() {
+                    return geometry.translateObject(translateMatrix, _vertices);
+                },
                 get indices() { return _indicesTriangles; },
+                toString() { return `Cube [${_id}]`; },
+
                 translate(x, y, z) {
-                    _vertices = geometry.translateObject(x, y, z, _vertices);
+                    translateMatrix[0][0] = x;
+                    translateMatrix[1][1] = y;
+                    translateMatrix[2][2] = z;
                 }
             };
         },
