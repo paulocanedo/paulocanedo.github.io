@@ -25,6 +25,19 @@ var dom_helper = (function () {
             let posY = event.offsetY ? (event.offsetY) : event.pageY - target.offsetTop;
 
             return vec2(posX, posY);
+        },
+        getSelectedFromList(list, attribute) {
+            for(let elem of list) {
+                if(elem.className.indexOf('active') >= 0) {
+                    return elem.getAttribute(`data-${attribute}`);
+                }
+            }
+            return null;
+        },
+        clearSelection(list) {
+            for(let elem of list) {
+                elem.className = '';
+            }
         }
     };
 })();

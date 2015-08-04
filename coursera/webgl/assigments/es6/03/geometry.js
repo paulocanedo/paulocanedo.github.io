@@ -13,11 +13,12 @@ let geometry = (() => {
             }
             return result;
         },
-        translateObject(translateMatrix, vertices) {
+        multMatrixVertices(translateMatrix, vertices) {
+            let result = [];
             for(let i=0; i<vertices.length; i++) {
-                vertices[i] = geometry.multMatriceVector(translateMatrix, vec4(vertices[i], 1)).slice(0, 3);
+                result.push(geometry.multMatriceVector(translateMatrix, vec4(vertices[i], 1)).slice(0, 3));
             }
-            return vertices;
+            return result;
         }
     }
 })();

@@ -46,6 +46,7 @@ let ObjectManager = (() => {
             let node = document.createElement('li');
             let textNode = document.createTextNode(object.toString());
 
+            node.setAttribute('data-id', object.id);
             node.appendChild(textNode);
             return node;
         }
