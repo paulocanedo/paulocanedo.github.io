@@ -1,19 +1,21 @@
 let Cylinder = (() => {
     let build = (radiusTop, radiusBottom, npoints) => {
-        let vertexPositionData = [], indexData = [];
+        let vertexPositionData = [], indexData = [], colorData = [];
 
         let angle = Math.PI * 2 / npoints;
         for(let a = 0; a < Math.PI * 2; a += angle) {
             let x = Math.cos(a) * radiusTop;
             let z = Math.sin(a) * radiusTop;
 
-            vertexPositionData.push(vec3(x, 1.0, z));
+            vertexPositionData.push(vec3(x, 0.5, z));
+            colorData.push(x, 1.0, z, 1);
         }
         for(let a = 0; a < Math.PI * 2; a += angle) {
             let x = Math.cos(a) * radiusBottom;
             let z = Math.sin(a) * radiusBottom;
 
-            vertexPositionData.push(vec3(x, 0.0, z));
+            vertexPositionData.push(vec3(x, -0.5, z));
+            colorData.push(x, 0.0, z, 1);
         }
 
         let half = vertexPositionData.length / 2;
@@ -28,37 +30,21 @@ let Cylinder = (() => {
         }
         indexData.push(half-1,0,vertexPositionData.length-1,0,vertexPositionData.length-1,half);
 
-        return {vertices: vertexPositionData, indices: indexData};
+        return {vertices: vertexPositionData, indices: indexData, colors: colorData};
     };
 
+    let object = build(1.0, .5, 32);
+
     return {
-        create({id, radiusTop, radiusBottom, bands}) {
-            let info = build(radiusTop, radiusBottom, bands);
+        create({id}) {
 
-            let _id = id;
-            let _vertices = info.vertices;
-            let _indicesTriangles = info.indices;
-            let _colors = _vertices.map(elem => {
-                let length = _vertices.length;
-                let color = vec4(
-                    Math.abs(elem[0]),
-                    Math.abs(elem[1]),
-                    Math.abs(elem[2]),
-                    1.0);
-                return color;
+            return ObjectCreator.create({
+                id: id,
+                name: 'Cylinder',
+                vertices: object.vertices,
+                flatIndices: new Uint16Array(object.indices),
+                flatColors: flatten(object.colors)
             });
-
-            return {
-                get id() { return _id },
-                get colors() { return _colors; },
-                get vertices() { return _vertices; },
-                get indices() { return _indicesTriangles; },
-                toString() { return `Cylinder [${_id}]`; },
-
-                translate(x, y, z) {
-                    _vertices = geometry.translateObject(x, y, z, _vertices);
-                }
-            };
-        },
+        }
     };
 })();

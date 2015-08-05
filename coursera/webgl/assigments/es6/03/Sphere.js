@@ -1,6 +1,6 @@
 let Sphere = (() => {
     let build = (radius, latitudeBands, longitudeBands) => {
-        let vertexPositionData = [], indexData = [];
+        let vertexPositionData = [], indexData = [], colorData = [];
         for (let latNumber=0; latNumber <= latitudeBands; latNumber++) {
             let theta = latNumber * Math.PI / latitudeBands;
             let sinTheta = Math.sin(theta);
@@ -16,6 +16,7 @@ let Sphere = (() => {
                 let z = sinPhi * sinTheta;
 
                 vertexPositionData.push(vec3(radius * x, radius * y, radius * z));
+                colorData.push(vec4(x, y, z, 1.0));
             }
         }
 
@@ -32,37 +33,20 @@ let Sphere = (() => {
                 indexData.push(first + 1);
             }
         }
-        return {vertices: vertexPositionData, indices: indexData};
+        return {vertices: vertexPositionData, indices: indexData, colors: colorData};
     };
 
+    let object = build(1.0, 32, 32);
     return {
-        create({id, radius, bands}) {
-            let info = build(radius, bands, bands);
+        create({id}) {
 
-            let _id = id;
-            let _vertices = info.vertices;
-            let _indicesTriangles = info.indices;
-            let _colors = _vertices.map(elem => {
-                let length = _vertices.length;
-                let color = vec4(
-                    Math.abs(elem[0]),
-                    Math.abs(elem[1]),
-                    Math.abs(elem[2]),
-                    1.0);
-                return color;
+            return ObjectCreator.create({
+                id: id,
+                name: 'Sphere',
+                vertices: object.vertices,
+                flatIndices: new Uint16Array(object.indices),
+                flatColors: flatten(object.colors)
             });
-
-            return {
-                get id() { return _id },
-                get colors() { return _colors; },
-                get vertices() { return _vertices; },
-                get indices() { return _indicesTriangles; },
-                toString() { return `Sphere [${_id}]`; },
-
-                translate(x, y, z) {
-                    _vertices = geometry.translateObject(x, y, z, _vertices);
-                }
-            };
-        },
+        }
     };
 })();

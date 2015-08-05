@@ -36,7 +36,7 @@ let drawing = (() => {
             gl.viewport( 0, 0, canvas.width, canvas.height );
             gl.clearColor(1.0, 1.0, 1.0, 1.0);
 
-            program = initShaders( gl, "vertex-shader", "fragment-shader" );
+            program = initShaders(gl, "vertex-shader", "fragment-shader" );
         },
         append(object) {
             objects.push(object);
@@ -44,38 +44,19 @@ let drawing = (() => {
         render() {
             gl.useProgram( program );
 
-            // let radius = 200;
-            // let theta = radians(parseInt(document.getElementById('worldRotationXCtrl').value));
-            // let phi   = radians(parseInt(document.getElementById('worldRotationYCtrl').value));
-            let modelViewMatrixLoc = gl.getUniformLocation(program, 'modelViewMatrix');
+            let vPosition = gl.getAttribLocation(program, "vPosition");
+            let vColor = gl.getAttribLocation(program, "vColor");
+            let wireframeLoc = gl.getUniformLocation(program, 'wireframe');
             let projectionMatrixLoc = gl.getUniformLocation(program, 'projectionMatrix');
-            //
-            // var eye = vec3( radius*Math.sin(theta)*Math.cos(phi),
-            //                 radius*Math.sin(theta)*Math.sin(phi),
-            //                 radius*Math.cos(theta));
 
-            const at = vec3(0.0, 0.0, 0.0);
-            const up = vec3(0.0, 1.0, 0.0);
-
-            var modelViewMatrix = lookAt( [100, 250, 200], at, up );
-            // var modelViewMatrix = lookAt( eye, at, up );
-            var projectionMatrix = perspective(radians(90), canvas.width / canvas.height, -180, 180);
-            // var projectionMatrix = ortho( -2, 2, -2, 2, -2, 2 );
-            // var projectionMatrix = ortho( left, right, bottom, ytop, near, far );
-
-            gl.uniformMatrix4fv( modelViewMatrixLoc, false, flatten(modelViewMatrix) );
-            // gl.uniformMatrix4fv( projectionMatrixLoc, false, flatten(projectionMatrix) );
-
-            gl.uniformMatrix4fv( projectionMatrixLoc, false, flatten(ortho(-8, 8, -8, 8, -8, 8)) );
+            let projectionMatrix = perspective(radians(90), canvas.width / canvas.height, -180, 180);
             let worldRotationLoc = gl.getUniformLocation(program, 'worldRotation');
+
+            gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(ortho(-8, 8, -8, 8, -8, 8)) );
             gl.uniform3fv(worldRotationLoc, drawing.world.rotationMatrix);
 
             gl.enable(gl.DEPTH_TEST);
             gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
-
-            let vPosition = gl.getAttribLocation(program, "vPosition");
-            let vColor = gl.getAttribLocation(program, "vColor");
-            let wireframeLoc = gl.getUniformLocation(program, 'wireframe');
 
             gl.uniform1i(wireframeLoc, 0);
             for(let object of objects) {
@@ -113,10 +94,7 @@ let application = (() => {
                 }
                 evt.target.className = 'active';
             };
-            modeCtrl.addEventListener('click', installList);
-            objectsList.addEventListener('click', installList);
-            objectsList.addEventListener('click', evt => {
-                let selectedId = parseInt(dom_helper.getSelectedFromList(objectsList.children, 'id'));
+            let updateTransformValues = selectedId => {
                 let object = ObjectManager.find(selectedId);
                 if(object) {
                     let values = null;
@@ -125,33 +103,77 @@ let application = (() => {
                         values = object.translateValues;
                     } else if(what === 'scale') {
                         values = object.scaleValues;
+                    } else if(what === 'rotate') {
+                        values = object.rotateValues;
                     }
 
                     transformX.value = values[0];
                     transformY.value = values[1];
                     transformZ.value = values[2];
                 }
-            });
+            };
 
-            transformX.addEventListener('input', evt => {
-                let value = parseFloat(evt.target.value);
-                let selectedId = parseInt(dom_helper.getSelectedFromList(objectsList.children, 'id'));
+            modeCtrl.addEventListener('click', installList);
+            objectsList.addEventListener('click', installList);
+            objectsList.addEventListener('click', evt => updateTransformValues(evt.target.getAttribute('data-id')));
+            document.getElementById('translateTransform').addEventListener('change',
+                evt => updateTransformValues(dom_helper.getSelectedFromList(objectsList.children, 'id')));
+            document.getElementById('scaleTransform').addEventListener('change',
+                evt => updateTransformValues(dom_helper.getSelectedFromList(objectsList.children, 'id')));
+            document.getElementById('rotationTransform').addEventListener('change',
+                evt => updateTransformValues(dom_helper.getSelectedFromList(objectsList.children, 'id')));
+
+            let transform = (value, axis) => {
+                let selectedId = dom_helper.getSelectedFromList(objectsList.children, 'id');
                 let object = ObjectManager.find(selectedId);
+                if(!object) return;
 
-                if(object) {
-                    object.translate(value, 0, 0);
+                let what = dom_helper.querySelected('transformation').value;
+                let params = {};
+                let fnTransform = null;
+                if(what === 'translate') {
+                    object.fnTransform = object.translate;
+                } else if(what === 'scale') {
+                    object.fnTransform = object.scale;
+                } else if(what === 'rotate') {
+                    object.fnTransform = object.rotate;
+                    params.angle = value;
+                    params.axis = axis;
                 }
+
+                switch (axis) {
+                    case 0: //X
+                        params.x = value;
+                        break;
+                    case 1: //Y
+                        params.y = value;
+                        break;
+                    case 2: //Z
+                        params.z = value;
+                        break;
+                    default:
+                }
+                object.fnTransform(params);
+            };
+
+            transformX.addEventListener('input', evt => transform(parseFloat(evt.target.value), 0));
+            transformY.addEventListener('input', evt => transform(parseFloat(evt.target.value), 1));
+            transformZ.addEventListener('input', evt => transform(parseFloat(evt.target.value), 2));
+
+            let newObjectDom = document.getElementById('new-object');
+            newObjectDom.addEventListener('click', evt => {
+                let what = evt.target.getAttribute('data-value');
+                let object = ObjectManager.buildObject(what);
+
+                drawing.append(object);
+                dom_helper.clearSelection(objectsList.children);
+
+                object.dom.className = 'active';
+                object.dom.scrollIntoView();
+                updateTransformValues(object.id);
             });
 
-            // let cube1   = ObjectManager.buildObject('cube');
-            // let sphere1 = ObjectManager.buildObject('sphere');
-            // let sphere2 = ObjectManager.buildObject('sphere');
-            // let cone1 = ObjectManager.buildObject('cone');
-            // let cone2 = ObjectManager.buildObject('cone');
-            // let cylinder1 = ObjectManager.buildObject('cylinder');
-            // let cylinder2 = ObjectManager.buildObject('cylinder');
-
-            drawing.append(ObjectManager.buildObject('cube'));
+            // drawing.append(ObjectManager.buildObject('cube'));
 
             drawing.render();
         },

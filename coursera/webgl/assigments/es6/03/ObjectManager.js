@@ -6,6 +6,7 @@ let ObjectManager = (() => {
     return {
         get lastUuid() { return control; },
         get newUuid() { return ++control; },
+        get getCollection() { return collection; },
 
         buildObject(what, params = {}) {
             let object = null;
@@ -31,11 +32,14 @@ let ObjectManager = (() => {
                 default:
                     throw Error(`no object '${what}' available to build`);
             }
-            domObjects.appendChild(this.newListItem(object));
+            let domObject = this.newListItem(object);
+            object.dom = domObject;
+            domObjects.appendChild(domObject);
             return collection[this.lastUuid] = object;
         },
 
         find(id) {
+            id = parseInt(id);
             for(let object of collection) {
                 if(object.id === id) return object;
             }

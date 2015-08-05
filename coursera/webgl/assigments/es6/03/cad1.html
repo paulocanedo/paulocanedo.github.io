@@ -16,14 +16,23 @@
 
             <fieldset class="canvas-control">
                 <legend>Objects</legend>
-                <ul id="objects-list">
+                <ul id="objects-list" class="scroll-list">
+                </ul>
+            </fieldset>
+
+            <fieldset class="canvas-control">
+                <legend>New Object</legend>
+                <ul id="new-object">
+                    <li data-value="cone">Cone</li>
+                    <li data-value="cube">Cube</li>
+                    <li data-value="cylinder">Cylinder</li>
+                    <li data-value="sphere">Sphere</li>
                 </ul>
             </fieldset>
 
             <fieldset class="canvas-control">
                 <legend>Mode</legend>
                 <ul id="mode">
-                    <li data-value="creator">Object Creator</li>
                     <li data-value="camera" class="active">Camera</li>
                     <li data-value="editor">Editor</li>
                 </ul>
@@ -58,6 +67,11 @@
                     </div>
                 </form>
             </fieldset>
+
+            <!-- <fieldset class="canvas-control"> -->
+                <!-- <legend>Wireframe</legend> -->
+                draw wireframe <input type="checkbox" />
+            <!-- </fieldset> -->
 
         </div>
     </div>
@@ -97,7 +111,6 @@ attribute  vec4 vColor;
 varying vec4 fColor;
 
 uniform vec3 worldRotation;
-uniform mat4 modelViewMatrix;
 uniform mat4 projectionMatrix;
 
 void main()
@@ -131,10 +144,7 @@ void main()
 		    0.0,  0.0, 0.0, 1.0
     );
 
-    // fColor = vec4(vPosition.xyz, 1.0);
     fColor = vColor;
-    // gl_Position = modelViewMatrix * projectionMatrix * vPosition;
-    // gl_Position = projectionMatrix * modelViewMatrix * vPosition;
     gl_Position = rz * ry * rx * projectionMatrix * vPosition;
 }
 </script>
@@ -199,6 +209,7 @@ main()
 <script type="application/javascript" src="/coursera/webgl/Common/MV.js"></script>
 <script type="application/javascript" src="/coursera/webgl/Common/flatten.js"></script>
 <!-- <script type="application/javascript" src="/coursera/webgl/assigments/dist/browser-polyfill.js"></script> -->
+<script type="application/javascript;version=1.7" src="ObjectCreator.js"></script>
 <script type="application/javascript;version=1.7" src="ObjectManager.js"></script>
 <script type="application/javascript;version=1.7" src="geometry.js"></script>
 <script type="application/javascript;version=1.7" src="Cube.js"></script>
