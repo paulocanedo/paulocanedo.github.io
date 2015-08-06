@@ -28,7 +28,7 @@ let ObjectCreator = (() => {
                     if(y !== undefined) translateMatrix[1][3] = y;
                     if(z !== undefined) translateMatrix[2][3] = z;
 
-                    this.rebuild();
+                    this.compute();
                 },
 
                 scale({x, y, z}) {
@@ -88,7 +88,10 @@ let ObjectCreator = (() => {
                     gl.bufferSubData(gl.ARRAY_BUFFER, 0, flatColors);
                 },
 
-                draw(gl, vPosition, vColor, wireframeLoc = null) {
+                draw(gl, bufferInfo, opts) {
+                    let {vPosition, vColor, wireframeLoc} = bufferInfo;
+                    let {solid, wireframe} = opts;
+
                     this.initBuffers(gl);
                     this.flush(gl);
 
@@ -100,9 +103,13 @@ let ObjectCreator = (() => {
                     gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
                     gl.enableVertexAttribArray(vColor);
 
-                    gl.drawElements(gl.TRIANGLES, flatIndices.length, gl.UNSIGNED_SHORT, 0);
 
-                    if(wireframeLoc) {
+                    if(solid) {
+                        gl.uniform1i(wireframeLoc, 0);
+                        gl.drawElements(gl.TRIANGLES, flatIndices.length, gl.UNSIGNED_SHORT, 0);
+                    }
+
+                    if(wireframe) {
                         gl.uniform1i(wireframeLoc, 1);
                         gl.drawElements(gl.LINES, flatIndices.length, gl.UNSIGNED_SHORT, 0);
                     }

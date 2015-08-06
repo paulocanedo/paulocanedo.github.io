@@ -33,7 +33,29 @@ select {
     overflow-y: auto;
 }
 
-.canvas-control > ul > li:hover {
+.toolbar {
+    text-align: center;
+    border: 1px solid black;
+    height: 2em;
+}
+
+.toolbar > ul {
+    background: rgb(72, 85, 91);
+    padding: 0;
+    border: 0;
+    margin: 0;
+}
+
+.toolbar > li {
+    display: inline;
+    /*padding: 0.5em 1em;*/
+    padding: 0;
+    border: 0;
+    margin: 0;
+    cursor: pointer;
+}
+
+ul > li:hover {
     background-color: rgb(30, 110, 255);
 }
 .canvas-control > ul > li:last-child {
@@ -86,7 +108,7 @@ select {
 }
 
 .canvas-control > legend {
-    padding: 0.3em 1em;
+    padding: 0.2em 1em;
     border: 2px solid white;
     border-radius: 0.4em;
     font-size: 1.2em;
@@ -291,4 +313,47 @@ input[type=range]::-moz-range-thumb {
   border-radius: 100%;
   box-shadow: 0 0 1px 0px #d4d4d4;
   border: 1px solid gray; /* */
+}
+
+
+.segmented-button input[type="radio"] {
+  width: 0px;
+  height: 0px;
+  display: none;
+}
+.segmented-button label {
+  display: inline-block;
+  vertical-align: middle;
+  background-color: #48555B;
+  border: 1px solid #b2b2b2;
+  border-right: 0;
+  color: white;
+  padding: 0.5em 1.2em;
+  cursor: pointer;
+  margin-right: -5px;
+}
+
+.segmented-button label:hover {
+  background-color: #1E6EFF;
+}
+.segmented-button label:active, .segmented-button label.active {
+  background-color: #6EB4FF;
+}
+.segmented-button label.first {
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
+}
+.segmented-button label.last {
+  border: 1px solid #b2b2b2;
+  border-top-right-radius: 10px;
+  border-bottom-right-radius: 10px;
+}
+.segmented-button input:checked + label, .segmented-button label.selected {
+  background-color: #6EB4FF;
+}
+.segmented-button input:disabled + label {
+  background-color: #666666;
+  cursor: default;
+  color: #b2b2b2;
+  box-shadow: none;
 }

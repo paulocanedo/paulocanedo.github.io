@@ -28,5 +28,19 @@ let Axis = (() => {
         get X() { return 0; },
         get Y() { return 1; },
         get Z() { return 2; },
+        get W() { return 3; },
+
+        toString(axis) {
+            if(axis === Axis.X) {
+                return 'x';
+            } else if(axis === Axis.Y) {
+                return 'y';
+            } else if(axis === Axis.Z) {
+                return 'z';
+            } else if(axis === Axis.W) {
+                return 'w';
+            }
+            throw Error(`Invalid axis: ${axis}`);
+        }
     }
 })();

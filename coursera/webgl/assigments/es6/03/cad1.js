@@ -7,6 +7,10 @@ let drawing = (() => {
 
     let objects = [];
 
+    let solid     = document.getElementById('solidId');
+    let wireframe = document.getElementById('wireframeId');
+    let solidWire = document.getElementById('solidWireId');
+
     let _world = (() => {
         let _rotation = vec3(0,0,0);
 
@@ -29,11 +33,21 @@ let drawing = (() => {
             gl = WebGLUtils.setupWebGL( canvas );
             if ( !gl ) { alert( "WebGL isn't available" ); }
 
-            this.setDefaults();
+            this.setDefaults(gl);
             return canvas;
         },
-        setDefaults() {
-            gl.viewport( 0, 0, canvas.width, canvas.height );
+        setDefaults(gl) {
+            let width  = document.querySelector('.content').clientWidth;
+            let height = Math.max(
+                document.body.scrollHeight, document.documentElement.scrollHeight,
+                document.body.offsetHeight, document.documentElement.offsetHeight,
+                document.body.clientHeight, document.documentElement.clientHeight
+            );
+
+            gl.canvas.width = width;
+            gl.canvas.height = height;
+
+            gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
             gl.clearColor(1.0, 1.0, 1.0, 1.0);
 
             program = initShaders(gl, "vertex-shader", "fragment-shader" );
@@ -52,19 +66,21 @@ let drawing = (() => {
             let projectionMatrix = perspective(radians(90), canvas.width / canvas.height, -180, 180);
             let worldRotationLoc = gl.getUniformLocation(program, 'worldRotation');
 
+            let bufferInfo = {};
+            let opts = {solid: solid.checked || solidWire.checked, wireframe: wireframe.checked || solidWire.checked};
+
             gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(ortho(-8, 8, -8, 8, -8, 8)) );
             gl.uniform3fv(worldRotationLoc, drawing.world.rotationMatrix);
 
             gl.enable(gl.DEPTH_TEST);
             gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
 
-            gl.uniform1i(wireframeLoc, 0);
-            for(let object of objects) {
-                object.draw(gl, vPosition, vColor);
-            }
+            bufferInfo.vPosition = vPosition;
+            bufferInfo.vColor = vColor;
+            bufferInfo.wireframeLoc = wireframeLoc;
 
             for(let object of objects) {
-                object.draw(gl, vPosition, vColor, wireframeLoc);
+                object.draw(gl, bufferInfo, opts);
             }
             requestAnimFrame(drawing.render);
         }
@@ -78,7 +94,17 @@ let application = (() => {
     let transformZ = document.getElementById('transformZ');
 
     let objectsList = document.getElementById('objects-list');
-    let modeCtrl    = document.getElementById('mode');
+    let addObjectButton = document.getElementById('addObjectButton');
+    let addObjectModal  = document.getElementById('addObjectModal');
+
+    let dismissModal = document.getElementById('dismissModal');
+
+    addObjectButton.addEventListener('click', evt => {
+        addObjectModal.style.display = 'block';
+    });
+    dismissModal.addEventListener('click', evt => {
+        addObjectModal.style.display = 'none';
+    });
 
     let mouse = {pressed: false, lastPosition: null, startRotationX: 0, startRotationY: 0};
 
@@ -89,6 +115,8 @@ let application = (() => {
             canvas.addEventListener('mouseup', application.mouseup);
 
             let installList = evt => {
+                if(evt.target.tagName !== 'LI') return;
+
                 if(evt.target.className.indexOf('active') < 0 ) {
                     dom_helper.clearSelection(evt.target.parentNode.children);
                 }
@@ -113,7 +141,6 @@ let application = (() => {
                 }
             };
 
-            modeCtrl.addEventListener('click', installList);
             objectsList.addEventListener('click', installList);
             objectsList.addEventListener('click', evt => updateTransformValues(evt.target.getAttribute('data-id')));
             document.getElementById('translateTransform').addEventListener('change',
@@ -141,17 +168,7 @@ let application = (() => {
                     params.axis = axis;
                 }
 
-                switch (axis) {
-                    case Axis.X: //X
-                        params.x = value;
-                        break;
-                    case Axis.Y: //Y
-                        params.y = value;
-                        break;
-                    case Axis.Z: //Z
-                        params.z = value;
-                        break;
-                }
+                params[Axis.toString(axis)] = value;
                 object.fnTransform(params);
             };
 
@@ -170,6 +187,7 @@ let application = (() => {
                 object.dom.className = 'active';
                 object.dom.scrollIntoView();
                 updateTransformValues(object.id);
+                addObjectModal.style.display = 'none';
             });
 
             drawing.render();

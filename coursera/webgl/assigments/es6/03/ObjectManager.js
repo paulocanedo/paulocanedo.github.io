@@ -52,6 +52,7 @@ let ObjectManager = (() => {
 
             node.setAttribute('data-id', object.id);
             node.appendChild(textNode);
+
             return node;
         }
     }
