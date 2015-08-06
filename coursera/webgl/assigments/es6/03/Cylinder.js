@@ -8,14 +8,14 @@ let Cylinder = (() => {
             let z = Math.sin(a) * radiusTop;
 
             vertexPositionData.push(vec3(x, 0.5, z));
-            colorData.push(x, 1.0, z, 1);
+            colorData.push((x+1)/2, 1.0, (z+1)/2, 1);
         }
         for(let a = 0; a < Math.PI * 2; a += angle) {
             let x = Math.cos(a) * radiusBottom;
             let z = Math.sin(a) * radiusBottom;
 
             vertexPositionData.push(vec3(x, -0.5, z));
-            colorData.push(x, 0.0, z, 1);
+            colorData.push((x+1)/2, 0.0, (z+1)/2, 1);
         }
 
         let half = vertexPositionData.length / 2;

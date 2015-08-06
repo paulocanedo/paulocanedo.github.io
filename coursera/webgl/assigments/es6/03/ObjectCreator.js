@@ -3,18 +3,21 @@ let ObjectCreator = (() => {
         create({id, vertices, flatIndices, flatColors, name}) {
             // its required store non flat vertices to compute transformations
 
-            let translateMatrix = translate(0, 0, 0);
-            let scaleMatrix     = scalem(1, 1, 1);
-            let xRotationMatrix = rotate(0, 1, 0, 0);
-            let yRotationMatrix = rotate(0, 0, 1, 0);
-            let zRotationMatrix = rotate(0, 0, 0, 1);
+            let translateMatrix  = translate(0, 0, 0);
+            let scaleMatrix      = scalem(1, 1, 1);
+            let rotationAxis     = [vec3(1, 0, 0), vec3(0,1,0), vec3(0,0,1)];
+            let rotationMatrices = [rotate(0, rotationAxis[Axis.X]),
+                                    rotate(0, rotationAxis[Axis.Y]),
+                                    rotate(0, rotationAxis[Axis.Z])];
+            let _rotateValues    = [0, 0, 0];
 
             let buffers = {initialized: false};
             let flatVertices = flatten(vertices);
-            let _rotateValues = [0, 0, 0];
+
 
             return {
                 toString() { return `${name} [${id}]`; },
+
                 get id() { return id },
                 get translateValues() { return [translateMatrix[0][3], translateMatrix[1][3], translateMatrix[2][3]]; },
                 get scaleValues() { return [scaleMatrix[0][0], scaleMatrix[1][1], scaleMatrix[2][2]]; },
@@ -33,58 +36,22 @@ let ObjectCreator = (() => {
                     if(y !== undefined) scaleMatrix[1][1] = y;
                     if(z !== undefined) scaleMatrix[2][2] = z;
 
-                    this.rebuild();
+                    this.compute();
                 },
 
                 rotate({angle, axis}) {
-                    let theta = radians(angle);
-                    let sinTheta = Math.sin(theta);
-                    let cosTheta = Math.cos(theta);
+                    rotationMatrices[axis] = rotate(angle, rotationAxis[axis]);
 
-                    switch (axis) {
-                        case 0:
-                            _rotateValues[0] = angle;
-                            this.rotateX(sinTheta, cosTheta);
-                            break;
-                        case 1:
-                            _rotateValues[1] = angle;
-                            this.rotateY(sinTheta, cosTheta);
-                            break;
-                        case 2:
-                            _rotateValues[2] = angle;
-                            this.rotateZ(sinTheta, cosTheta);
-                            break;
-                        default:
-                            throw Error(`Invalid axis rotation: ${axis}`);
-                    }
-
-                    this.rebuild();
+                    this.compute();
                 },
 
-                rotateX(sinTheta, cosTheta) {
-                    xRotationMatrix[1][1] =  cosTheta;
-                    xRotationMatrix[1][2] = -sinTheta;
-                    xRotationMatrix[2][1] =  sinTheta;
-                    xRotationMatrix[2][2] =  cosTheta;
-                },
-                rotateY(sinTheta, cosTheta) {
-                    xRotationMatrix[0][0] =  cosTheta;
-                    xRotationMatrix[0][2] =  sinTheta;
-                    xRotationMatrix[2][0] = -sinTheta;
-                    xRotationMatrix[2][2] =  cosTheta;
-                },
-                rotateZ(sinTheta, cosTheta) {
-                    xRotationMatrix[0][0] =  cosTheta;
-                    xRotationMatrix[0][1] = -sinTheta;
-                    xRotationMatrix[1][0] =  sinTheta;
-                    xRotationMatrix[1][1] =  cosTheta;
-                },
-
-                rebuild() {
-                    let matrix = mult(translateMatrix, scaleMatrix);
-                    matrix = mult(xRotationMatrix, matrix);
-                    matrix = mult(yRotationMatrix, matrix);
-                    matrix = mult(zRotationMatrix, matrix);
+                compute() {
+                    let matrix = mat4();
+                    matrix = mult(rotationMatrices[Axis.X], matrix);
+                    matrix = mult(rotationMatrices[Axis.Y], matrix);
+                    matrix = mult(rotationMatrices[Axis.Z], matrix);
+                    matrix = mult(    scaleMatrix, matrix);
+                    matrix = mult(translateMatrix, matrix);
                     flatVertices = flatten(geometry.multMatrixVertices(matrix, vertices));
                 },
 

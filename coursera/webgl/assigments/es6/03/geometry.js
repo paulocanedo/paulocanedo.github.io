@@ -22,3 +22,11 @@ let geometry = (() => {
         }
     }
 })();
+
+let Axis = (() => {
+    return {
+        get X() { return 0; },
+        get Y() { return 1; },
+        get Z() { return 2; },
+    }
+})();

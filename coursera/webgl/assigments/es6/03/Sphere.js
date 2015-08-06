@@ -16,7 +16,7 @@ let Sphere = (() => {
                 let z = sinPhi * sinTheta;
 
                 vertexPositionData.push(vec3(radius * x, radius * y, radius * z));
-                colorData.push(vec4(x, y, z, 1.0));
+                colorData.push(vec4((x + 1)/2, (y + 1) / 2, (z + 1) / 2, 1.0));
             }
         }
 

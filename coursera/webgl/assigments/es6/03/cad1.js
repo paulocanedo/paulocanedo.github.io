@@ -11,12 +11,12 @@ let drawing = (() => {
         let _rotation = vec3(0,0,0);
 
         return {
-            get thetaX() { return _rotation[0]; },
-            get thetaY() { return _rotation[1]; },
-            get thetaZ() { return _rotation[2]; },
-            set thetaX(rx_) { _rotation[0] = parseInt(rx_); },
-            set thetaY(ry_) { _rotation[1] = parseInt(ry_); },
-            set thetaZ(rz_) { _rotation[2] = parseInt(rz_); },
+            get thetaX() { return _rotation[Axis.X]; },
+            get thetaY() { return _rotation[Axis.Y]; },
+            get thetaZ() { return _rotation[Axis.Z]; },
+            set thetaX(rx_) { _rotation[Axis.X] = parseInt(rx_); },
+            set thetaY(ry_) { _rotation[Axis.Y] = parseInt(ry_); },
+            set thetaZ(rz_) { _rotation[Axis.Z] = parseInt(rz_); },
             get rotationMatrix() { return _rotation; }
         }
     })();
@@ -107,9 +107,9 @@ let application = (() => {
                         values = object.rotateValues;
                     }
 
-                    transformX.value = values[0];
-                    transformY.value = values[1];
-                    transformZ.value = values[2];
+                    transformX.value = values[Axis.X];
+                    transformY.value = values[Axis.Y];
+                    transformZ.value = values[Axis.Z];
                 }
             };
 
@@ -142,16 +142,15 @@ let application = (() => {
                 }
 
                 switch (axis) {
-                    case 0: //X
+                    case Axis.X: //X
                         params.x = value;
                         break;
-                    case 1: //Y
+                    case Axis.Y: //Y
                         params.y = value;
                         break;
-                    case 2: //Z
+                    case Axis.Z: //Z
                         params.z = value;
                         break;
-                    default:
                 }
                 object.fnTransform(params);
             };
@@ -172,8 +171,6 @@ let application = (() => {
                 object.dom.scrollIntoView();
                 updateTransformValues(object.id);
             });
-
-            // drawing.append(ObjectManager.buildObject('cube'));
 
             drawing.render();
         },
