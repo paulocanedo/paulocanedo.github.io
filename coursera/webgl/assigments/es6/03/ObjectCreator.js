@@ -41,16 +41,17 @@ let ObjectCreator = (() => {
 
                 rotate({angle, axis}) {
                     rotationMatrices[axis] = rotate(angle, rotationAxis[axis]);
+                    _rotateValues[axis] = angle;
 
                     this.compute();
                 },
 
                 compute() {
                     let matrix = mat4();
+                    matrix = mult(    scaleMatrix, matrix);
                     matrix = mult(rotationMatrices[Axis.X], matrix);
                     matrix = mult(rotationMatrices[Axis.Y], matrix);
                     matrix = mult(rotationMatrices[Axis.Z], matrix);
-                    matrix = mult(    scaleMatrix, matrix);
                     matrix = mult(translateMatrix, matrix);
                     flatVertices = flatten(geometry.multMatrixVertices(matrix, vertices));
                 },
