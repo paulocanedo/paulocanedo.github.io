@@ -3,6 +3,20 @@ let ObjectManager = (() => {
     let collection = [];
     let domObjects = document.getElementById('objects-list');
 
+    let createDeleteButton = object => {
+        let root = document.createElement('span');
+        let deleteNode = document.createElement('i');
+        deleteNode.className = 'fa fa-trash-o';
+
+        root.className = 'badge delete-button';
+        root.appendChild(deleteNode);
+        return root;
+    };
+    let createDescNode = object => {
+        let textNode = document.createTextNode(`  ${object.toString()}`);
+        return textNode;
+    };
+
     return {
         get lastUuid() { return control; },
         get newUuid() { return ++control; },
@@ -48,12 +62,22 @@ let ObjectManager = (() => {
 
         newListItem(object) {
             let node = document.createElement('li');
-            let textNode = document.createTextNode(object.toString());
-
             node.setAttribute('data-id', object.id);
-            node.appendChild(textNode);
+            node.className = 'list-group-item no-selectable default-cursor';
+
+            node.appendChild(createDeleteButton(object));
+            node.appendChild(createDescNode(object));
 
             return node;
+        },
+
+        get selected() {
+            for(let elem of collection) {
+                if(elem.dom.className.indexOf('active') >= 0) {
+                    return elem;
+                }
+            }
+            return null;
         }
     }
 })();

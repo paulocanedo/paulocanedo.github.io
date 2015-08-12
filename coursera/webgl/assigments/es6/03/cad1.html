@@ -1,205 +1,177 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-<head>
+  <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Assigment 03, Coursera WebGL</title>
-    <link rel="stylesheet" href="/coursera/webgl/styles/pure-min.css">
-    <link rel="stylesheet" href="/coursera/webgl/styles/grids-responsive-min.css">
-    <link rel="stylesheet" href="main.css">
-</head>
-<body>
+    <link href="/bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/bower_components/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+    <link href="main.css" rel="stylesheet">
+  </head>
+  <body>
 
-<nav class="segmented-button toolbar">
-    <!-- <input id="viewId" name="mode" value="view" type="radio" checked>
-    <label for="viewId" class="first">View</label>
+<nav class="navbar navbar-inverse navbar-fixed-top">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="#">WebGL #03</a>
+    </div>
 
-    <input id="editorId" name="mode" value="editor" type="radio">
-    <label for="editorId" class="last">Editor</label> -->
+    <div class="btn-group">
+        <button type="button" class="btn btn-lg btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Add Object <span class="caret"></span>
+        </button>
+        <ul class="dropdown-menu">
+            <li><a href="#" class="add-object-btn" data-value="cone">Cone</a></li>
+            <li><a href="#" class="add-object-btn" data-value="cube">Cube</a></li>
+            <li><a href="#" class="add-object-btn" data-value="cylinder">Cylinder</a></li>
+            <li><a href="#" class="add-object-btn" data-value="sphere">Sphere</a></li>
+        </ul>
+    </div>
 
-    <input id="solidId" name="modePaint" value="solid" type="radio" checked>
-    <label for="solidId" class="spaced first">Solid</label>
+    <div id="navbar" class="btn-group" data-toggle="buttons">
+      <label class="btn btn-lg btn-primary active">
+          <input type="radio" name="renderStyle" id="solidId" autocomplete="off" checked> Solid
+      </label>
 
-    <input id="wireframeId" name="modePaint" value="wireframe" type="radio">
-    <label for="wireframeId">Wire</label>
+      <label class="btn btn-lg btn-primary">
+          <input type="radio" name="renderStyle" id="wireframeId" autocomplete="off"> Wire
+      </label>
 
-    <input id="solidWireId" name="modePaint" value="solidWire" type="radio">
-    <label for="solidWireId" class="last">Both</label>
+      <label class="btn btn-lg btn-primary">
+          <input type="radio" name="renderStyle" id="solidWireId" autocomplete="off"> Both
+      </label>
+    </div>
 
-    <input id="addObjectButton" type="button" value="Add Object" class="spaced" />
-    <!-- <input id="delObjectButton" type="button" value="Del Selected" /> -->
+    <div class="btn-group">
+        <button type="button" class="btn btn-lg btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="fa fa-search fa-lg"></i> <span class="caret"></span>
+        </button>
+
+        <ul class="dropdown-menu">
+            <input type="range" id="zoomCtrl" min="4" max="50" step="1" />
+        </ul>
+    </div>
+  </div>
+
 </nav>
 
-<div id="layout" class="pure-g">
-    <div class="sidebar pure-u-1 pure-u-md-1-4">
-        <div class="header">
+<div class="container">
 
-            <fieldset class="canvas-control">
-                <legend>Objects</legend>
-                <ul id="objects-list" class="scroll-list vertical-list">
-                </ul>
-            </fieldset>
+  <div class="starter-template">
+      <canvas id="gl-canvas">
+          Oops ... your browser doesn't support the HTML5 canvas element
+      </canvas>
 
-            <fieldset class="canvas-control">
-                <legend>Transformation</legend>
-                <nav class="segmented-button">
-                    <input id="translateTransform" name="transformation" value="translate" type="radio" checked>
-                    <label for="translateTransform" class="first">Translate</label>
-
-                    <input id="scaleTransform" name="transformation" value="scale" type="radio">
-                    <label for="scaleTransform">Scale</label>
-
-                    <input id="rotationTransform" name="transformation" value="rotate" type="radio">
-                    <label for="rotationTransform" class="last">Rotation</label>
-                </nav>
-
-                <div class="transformation-control">
-                    <p>X <input id="transformX" type="number" value="0.0" step="0.1"></p>
-                    <p>Y <input id="transformY" type="number" value="0.0" step="0.1"></p>
-                    <p>Z <input id="transformZ" type="number" value="0.0" step="0.1"></p>
-                </div>
-            </fieldset>
-
+      <div class="panel panel-default float-form float-form-p1">
+        <div class="panel-heading">
+            <h3 class="panel-title">List of Objects</h3>
         </div>
-    </div>
+        <div class="panel-body">
+          <ul id="objects-list" class="list-group"></ul>
+        </div>
+      </div>
 
-    <div class="content pure-u-1 pure-u-md-3-4">
-        <canvas id="gl-canvas" class="bordered">
-        <!-- <canvas id="gl-canvas" width="1260" height="914" class="bordered"> -->
-            Oops ... your browser doesn't support the HTML5 canvas element
-        </canvas>
-    </div>
+      <div class="panel panel-default float-form float-form-p2">
+        <div class="panel-heading">
+            <h3 class="panel-title">Transformation</h3>
+        </div>
+        <div class="panel-body">
+            <div class="btn-group" data-toggle="buttons">
+              <label class="btn btn-primary active">
+                  <input type="radio" name="transformation" value="translate" id="translateTransform" autocomplete="off" checked> Translate
+              </label>
+
+              <label class="btn btn-primary">
+                  <input type="radio" name="transformation" value="scale" id="scaleTransform" autocomplete="off"> Scale
+              </label>
+
+              <label class="btn btn-primary">
+                  <input type="radio" name="transformation" value="rotate" id="rotateTransform" autocomplete="off"> Rotate
+              </label>
+            </div>
+
+          <ul class="list-group">
+              <li class="list-group-item">X <input id="transformX" type="number" value="0.0" step="0.1"></li>
+              <li class="list-group-item">Y <input id="transformY" type="number" value="0.0" step="0.1"></li>
+              <li class="list-group-item">Z <input id="transformZ" type="number" value="0.0" step="0.1"></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- <div class="panel panel-default float-form float-form-p3">
+          <div class="panel-heading">
+              <h3 class="panel-title">Properties</h3>
+          </div>
+          <div class="panel-body">
+              <ul class="list-group">
+                  <li class="list-group-item">Bands <input type="number" value="0.0" step="0.1"></li>
+                  <li class="list-group-item">Vertical Bands <input type="number" value="0.0" step="0.1"></li>
+                  <li class="list-group-item">Horizontal Bands <input type="number" value="0.0" step="0.1"></li>
+                  <li class="list-group-item">Radius <input type="number" value="0.0" step="0.1"></li>
+                  <li class="list-group-item">Radius Top <input type="number" value="0.0" step="0.1"></li>
+                  <li class="list-group-item">Radius Bottom <input type="number" value="0.0" step="0.1"></li>
+              </ul>
+          </div>
+      </div> -->
+
+  </div>
 </div>
 
-<div id="addObjectModal" class="modal">
-    <fieldset class="modal-form">
-        <legend>New Object</legend>
-        <ul id="new-object" class="vertical-list">
-            <li data-value="cone">Cone</li>
-            <li data-value="cube">Cube</li>
-            <li data-value="cylinder">Cylinder</li>
-            <li data-value="sphere">Sphere</li>
-        </ul>
+    <script id="vertex-shader" type="x-shader/x-vertex">
+    attribute  vec4 vPosition;
+    attribute  vec4 vColor;
+    varying vec4 fColor;
 
-        <ul class="vertical-list">
-            <li id="dismissModal">Cancel</li>
-        </ul>
-    </fieldset>
-</div>
+    uniform mat4 projectionMatrix;
+    uniform mat4 modelViewMatrix;
 
-<script id="vertex-shader" type="x-shader/x-vertex">
-attribute  vec4 vPosition;
-attribute  vec4 vColor;
-varying vec4 fColor;
-
-uniform vec3 worldRotation;
-uniform mat4 projectionMatrix;
-
-void main()
-{
-    // Compute the sines and cosines of theta for each of
-    //   the three axes in one computation.
-    // float theta = 3.0;
-    vec3 angles = radians( worldRotation );
-    vec3 c = cos( angles );
-    vec3 s = sin( angles );
-
-    // Remeber: these matrices are column-major
-    mat4 rx = mat4(
-            1.0,  0.0,  0.0, 0.0,
-		    0.0,  c.x,  s.x, 0.0,
-		    0.0, -s.x,  c.x, 0.0,
-		    0.0,  0.0,  0.0, 1.0
-    );
-
-    mat4 ry = mat4(
-            c.y, 0.0, -s.y, 0.0,
-		    0.0, 1.0,  0.0, 0.0,
-		    s.y, 0.0,  c.y, 0.0,
-		    0.0, 0.0,  0.0, 1.0
-    );
-
-    mat4 rz = mat4(
-            c.z, -s.z, 0.0, 0.0,
-		    s.z,  c.z, 0.0, 0.0,
-		    0.0,  0.0, 1.0, 0.0,
-		    0.0,  0.0, 0.0, 1.0
-    );
-
-    fColor = vColor;
-    gl_Position = rz * ry * rx * projectionMatrix * vPosition;
-}
-</script>
-
-<script id="fragment-shader" type="x-shader/x-fragment">
-precision mediump float;
-
-varying vec4 fColor;
-uniform int wireframe;
-
-void
-main()
-{
-    if(wireframe == 0) {
-        gl_FragColor = fColor;
-    } else {
-        gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+    void main()
+    {
+        fColor = vColor;
+        gl_Position = projectionMatrix * modelViewMatrix * vPosition;
     }
-}
-</script>
+    </script>
 
-<script id="vs-choose-color" type="x-shader/x-vertex">
-attribute vec4 vPosition;
-attribute vec4 vColor;
-varying vec4 fColor;
+    <script id="fragment-shader" type="x-shader/x-fragment">
+    precision mediump float;
 
-uniform vec2 dimension;
-varying float height;
+    varying vec4 fColor;
+    uniform int wireframe;
+    uniform int objSelected;
 
-
-void main()
-{
-    float x = -1.0 + 2.0 * vPosition.x / dimension[0];
-    float y = -1.0 + 2.0 * (dimension[1] - vPosition.y) / dimension[1];
-    gl_Position = vec4(x, y, 1.0, 1.0);
-
-    height = dimension[1];
-    fColor = vColor;
-}
-</script>
-
-<script id="fs-choose-color" type="x-shader/x-fragment">
-precision mediump float;
-
-varying vec4 fColor;
-varying float height;
-
-void
-main()
-{
-    float y = gl_FragCoord.y / height;//canvas height
-    if(y > .5) {
-      gl_FragColor = mix(fColor, vec4(1.0, 1.0, 1.0, 1.0), (y-0.5)*2.0);
-    } else {
-      gl_FragColor = mix(vec4(0.0, 0.0, 0.0, 1.0), fColor, y*2.0);
+    void
+    main()
+    {
+        if(wireframe == 0) {
+            gl_FragColor = fColor;
+        } else {
+            gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+        }
     }
-}
-</script>
+    </script>
 
-<script type="application/javascript" src="/coursera/webgl/Common/webgl-utils.js"></script>
-<script type="application/javascript" src="/coursera/webgl/Common/initShaders.js"></script>
-<script type="application/javascript" src="/coursera/webgl/Common/MV.js"></script>
-<script type="application/javascript" src="/coursera/webgl/Common/flatten.js"></script>
-<!-- <script type="application/javascript" src="/coursera/webgl/assigments/dist/browser-polyfill.js"></script> -->
-<script type="application/javascript;version=1.7" src="ObjectCreator.js"></script>
-<script type="application/javascript;version=1.7" src="ObjectManager.js"></script>
-<script type="application/javascript;version=1.7" src="geometry.js"></script>
-<script type="application/javascript;version=1.7" src="Cube.js"></script>
-<script type="application/javascript;version=1.7" src="Cone.js"></script>
-<script type="application/javascript;version=1.7" src="Cylinder.js"></script>
-<script type="application/javascript;version=1.7" src="Sphere.js"></script>
-<script type="application/javascript;version=1.7" src="dom.js"></script>
-<script type="application/javascript;version=1.7" src="cad1.js"></script>
-<!-- <script type="application/javascript;version=1.7" src="color_choose.js"></script> -->
-</body>
+    <script src="/bower_components/jquery/dist/jquery.min.js"></script>
+    <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script type="application/javascript" src="/coursera/webgl/Common/webgl-utils.js"></script>
+    <script type="application/javascript" src="/coursera/webgl/Common/initShaders.js"></script>
+    <script type="application/javascript" src="/coursera/webgl/Common/MV.js"></script>
+    <script type="application/javascript" src="/coursera/webgl/Common/flatten.js"></script>
+    <!-- <script type="application/javascript" src="/coursera/webgl/assigments/dist/browser-polyfill.js"></script> -->
+    <script type="application/javascript;version=1.7" src="ObjectCreator.js"></script>
+    <script type="application/javascript;version=1.7" src="ObjectManager.js"></script>
+    <script type="application/javascript;version=1.7" src="geometry.js"></script>
+    <script type="application/javascript;version=1.7" src="Cube.js"></script>
+    <script type="application/javascript;version=1.7" src="Cone.js"></script>
+    <script type="application/javascript;version=1.7" src="Cylinder.js"></script>
+    <script type="application/javascript;version=1.7" src="Sphere.js"></script>
+    <script type="application/javascript;version=1.7" src="dom.js"></script>
+    <script type="application/javascript;version=1.7" src="cad1.js"></script>
+  </body>
 </html>

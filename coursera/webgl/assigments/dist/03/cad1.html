@@ -94,6 +94,7 @@ varying vec4 fColor;
 
 uniform vec3 worldRotation;
 uniform mat4 projectionMatrix;
+uniform mat4 modelViewMatrix;
 
 void main()
 {
@@ -127,7 +128,8 @@ void main()
     );
 
     fColor = vColor;
-    gl_Position = rz * ry * rx * projectionMatrix * vPosition;
+    gl_Position = projectionMatrix * modelViewMatrix * vPosition;
+    // gl_Position = rz * ry * rx * projectionMatrix * vPosition;
 }
 </script>
 

@@ -1,0 +1,25 @@
+{
+  "name": "paulocanedo.github.io",
+  "version": "0.0.1",
+  "homepage": "http://paulocanedo.github.io",
+  "authors": [
+    "Paulo Canedo <paulocanedo@gmail.com>"
+  ],
+  "description": "third libraries",
+  "main": "index.html",
+  "moduleType": [
+    "es6"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "bootstrap": "~3.3.5",
+    "font-awesome": "~4.4.0"
+  }
+}

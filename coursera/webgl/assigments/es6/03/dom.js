@@ -2,12 +2,22 @@
 
 var dom_helper = (function () {
     return {
+        getDocumentWidth() {
+            return document.body.clientWidth;
+        },
+        getDocumentHeight() {
+            return Math.max(
+                document.body.scrollHeight, document.documentElement.scrollHeight,
+                document.body.offsetHeight, document.documentElement.offsetHeight,
+                document.body.clientHeight, document.documentElement.clientHeight
+            );
+        },
         querySelected(name) {
             let nodeList = document.getElementsByName(name);
 
             for (let i = 0; i < nodeList.length; i++) {
                 let node = nodeList[i];
-                if (node.checked) return node;
+                if (node.checked === true) return node;
             }
             return null;
         },
@@ -36,7 +46,12 @@ var dom_helper = (function () {
         },
         clearSelection(list) {
             for(let elem of list) {
-                elem.className = '';
+                elem.className = elem.className.replace('active', '').trim();
+            }
+        },
+        setActive(element) {
+            if(element.className.indexOf('active') < 0) {
+                element.className += ' active';
             }
         }
     };

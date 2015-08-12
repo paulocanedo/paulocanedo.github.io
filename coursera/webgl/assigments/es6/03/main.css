@@ -1,81 +1,31 @@
-* {
-    box-sizing: border-box;
-}
-
-a {
-    text-decoration: none;
-    color: rgb(61, 146, 201);
-}
-a:hover, a:focus {
-    text-decoration: underline;
-}
-
-canvas {
-    border: 1px solid black;
-}
-
-html {
-    overflow: hidden;
-}
-
 #gl-canvas {
     position: absolute;
-    top: 0px;
-    left:  25%;
+    top: 0;
+    left:  0;
     z-index: -1;
 }
 
-#chooseColorButton {
-    width: 256px;
-    height: 25px;
-    background-color: black;
-    border: 1px solid white;
-}
-
-.toolbar {
-    margin-top: 1px;
-    transform: translate(12%, 0%);
-}
-
-.scroll-list {
-    height: 30em;
+.float-form, .float-form-p1 {
+    position: absolute;
+    top: 70px;
+    left: 1em;
+    min-width: 200px;
+    max-height: 90%;
     overflow-y: auto;
 }
 
-.modal {
-    top: 0;
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    color: white;
-    text-align: center;
-    background-color: rgba(0, 0, 0, 0.85);
-    display: none;
+.float-form-p2 {
+    left: auto;
+    right: 1em;
 }
 
-.modal-form {
-    border-radius: 6px;
-    width: 25em;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    margin-right: -50%;
-    transform: translate(-50%, -50%);
+.float-form-p3 {
+    left: auto;
+    right: 1em;
+    top: 360px;
 }
 
-ul > li:hover {
-    background-color: rgb(30, 110, 255);
-}
-.vertical-list > li:last-child {
-    border-bottom-left-radius: 10px;
-    border-bottom-right-radius: 10px;
-}
-.vertical-list > li:first-child {
-    border-top-left-radius: 10px;
-    border-top-right-radius: 10px;
-}
-.vertical-list > li {
-    cursor: pointer;
+.no-selectable {
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     -khtml-user-select: none;
@@ -83,116 +33,16 @@ ul > li:hover {
     -ms-user-select: none;
     user-select: none;
 }
-.active {
-    background-color: rgb(110, 180, 255);
-}
-ul.vertical-list {
-    padding: 0;
-    margin-bottom: 1em;
-    line-height: 1.8em;
-    list-style-type: none;
-    background-color: rgb(72, 85, 91);
-    border-radius: 10px;
+
+.default-cursor {
+    cursor: default;
 }
 
-a.btn-danger {
-    background-color: #FF2233;
-    border: 1px solid #b2b2b2;
-    border-radius: 10px;
+.delete-button:hover {
+    background-color: black;
+}
+
+.list-group-item.active > .delete-button:hover {
+    background-color: black;
     color: white;
-    padding: 0.3em 20px;
-    cursor: pointer;
-}
-
-.canvas-control input {
-    color: black;
-}
-
-.canvas-control {
-    margin-top: .5em;
-    border: solid 2px white;
-    border-radius: .5em;
-    padding: .5em;
-    text-align: center;
-}
-
-.canvas-control > legend {
-    padding: 0 .2em;
-    font-size: 1.2em;
-}
-
-.header {
-    text-align: center;
-    top: auto;
-    margin: 3em auto;
-}
-
-.sidebar {
-    background: rgb(61, 79, 93);
-    color: #fff;
-}
-
-@media (min-width: 48em) {
-    .content {
-        padding: 1em 1.5em 0;
-        margin-left: 25%;
-    }
-
-    .header {
-        margin: 0.5em 1em;
-        text-align: right;
-    }
-
-    .sidebar {
-        position: fixed;
-        top: 0;
-        bottom: 0;
-    }
-}
-
-.segmented-button {
-    text-align: center;
-}
-.segmented-button input[type="radio"] {
-  width: 0px;
-  height: 0px;
-  display: none;
-}
-.segmented-button label, .segmented-button input[type="button"] {
-  display: inline-block;
-  vertical-align: middle;
-  background-color: #48555B;
-  border: 1px solid #b2b2b2;
-  border-right: 0;
-  color: white;
-  padding: 0.3em 10px;
-  cursor: pointer;
-  margin-right: -5px;
-}
-
-.segmented-button label:hover, .segmented-button input[type="button"]:hover {
-  background-color: #1E6EFF;
-}
-.segmented-button label:active, .segmented-button label.active {
-  background-color: #6EB4FF;
-}
-.segmented-button label.first {
-  border-top-left-radius: 6px;
-  border-bottom-left-radius: 6px;
-}
-.segmented-button label.last {
-  border: 1px solid #b2b2b2;
-  border-top-right-radius: 6px;
-  border-bottom-right-radius: 6px;
-}
-.segmented-button label.spaced, .segmented-button input[type="button"].spaced {
-  margin-left: 10px;
-}
-.segmented-button input:checked + label, .segmented-button label.selected {
-  background-color: #6EB4FF;
-}
-.segmented-button input:disabled + label {
-  background-color: #666666;
-  cursor: default;
-  color: #b2b2b2;
 }

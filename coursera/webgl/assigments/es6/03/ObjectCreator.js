@@ -49,9 +49,9 @@ let ObjectCreator = (() => {
                 compute() {
                     let matrix = mat4();
                     matrix = mult(    scaleMatrix, matrix);
-                    matrix = mult(rotationMatrices[Axis.X], matrix);
-                    matrix = mult(rotationMatrices[Axis.Y], matrix);
                     matrix = mult(rotationMatrices[Axis.Z], matrix);
+                    matrix = mult(rotationMatrices[Axis.Y], matrix);
+                    matrix = mult(rotationMatrices[Axis.X], matrix);
                     matrix = mult(translateMatrix, matrix);
                     flatVertices = flatten(geometry.multMatrixVertices(matrix, vertices));
                 },
@@ -90,8 +90,8 @@ let ObjectCreator = (() => {
                 },
 
                 draw(gl, bufferInfo, opts) {
-                    let {vPosition, vColor, wireframeLoc} = bufferInfo;
-                    let {solid, wireframe} = opts;
+                    let {vPosition, vColor, wireframeLoc, objSelectedLoc} = bufferInfo;
+                    let {selected, solid, wireframe} = opts;
 
                     this.initBuffers(gl);
                     this.flush(gl);
@@ -104,6 +104,7 @@ let ObjectCreator = (() => {
                     gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
                     gl.enableVertexAttribArray(vColor);
 
+                    gl.uniform1i(objSelectedLoc, selected);
 
                     if(solid) {
                         gl.uniform1i(wireframeLoc, 0);

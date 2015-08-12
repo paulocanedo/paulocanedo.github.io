@@ -11,22 +11,29 @@ let drawing = (() => {
     let wireframe = document.getElementById('wireframeId');
     let solidWire = document.getElementById('solidWireId');
 
-    let _world = (() => {
-        let _rotation = vec3(0,0,0);
+    let cam = {
+        radius: 10.0,
+        near:  -1,    far:    1,
+        theta:  0.0,  phi:    0.0,
+        fovy:   45.0, aspect: 1.0,
+        at:     vec3(0.0, 0.0, 0.0),
+        up:     vec3(0.0, 1.0, 0.0)
+    };
 
-        return {
-            get thetaX() { return _rotation[Axis.X]; },
-            get thetaY() { return _rotation[Axis.Y]; },
-            get thetaZ() { return _rotation[Axis.Z]; },
-            set thetaX(rx_) { _rotation[Axis.X] = parseInt(rx_); },
-            set thetaY(ry_) { _rotation[Axis.Y] = parseInt(ry_); },
-            set thetaZ(rz_) { _rotation[Axis.Z] = parseInt(rz_); },
-            get rotationMatrix() { return _rotation; }
-        }
-    })();
+    let modelViewMatrix, projectionMatrix;
+    let modelViewMatrixLoc, projectionMatrixLoc;
+
+    let bufferInfo = {};
+    let opts = {};
 
     return {
-        get world() { return _world; },
+        zoom(zoomIn = true) {
+            let amount = zoomIn ? -1.0 : 1.0;
+            cam.radius = Math.min(Math.max(4.0, cam.radius + amount), 50);
+        },
+        set eyeDistance(distance) {
+            cam.radius = cam.radius = Math.min(Math.max(4.0, distance), 50);
+        },
         init(canvasName) {
             canvas = document.getElementById( canvasName );
 
@@ -37,18 +44,11 @@ let drawing = (() => {
             return canvas;
         },
         setDefaults(gl) {
-            let width  = document.querySelector('.content').clientWidth;
-            let height = Math.max(
-                document.body.scrollHeight, document.documentElement.scrollHeight,
-                document.body.offsetHeight, document.documentElement.offsetHeight,
-                document.body.clientHeight, document.documentElement.clientHeight
-            );
-
-            gl.canvas.width = width;
-            gl.canvas.height = height;
+            gl.canvas.width = dom_helper.getDocumentWidth();
+            gl.canvas.height = dom_helper.getDocumentHeight();
 
             gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-            gl.clearColor(1.0, 1.0, 1.0, 1.0);
+            gl.clearColor(0, 0, 0, 1.0);
 
             program = initShaders(gl, "vertex-shader", "fragment-shader" );
         },
@@ -58,28 +58,31 @@ let drawing = (() => {
         render() {
             gl.useProgram( program );
 
-            let vPosition = gl.getAttribLocation(program, "vPosition");
-            let vColor = gl.getAttribLocation(program, "vColor");
-            let wireframeLoc = gl.getUniformLocation(program, 'wireframe');
-            let projectionMatrixLoc = gl.getUniformLocation(program, 'projectionMatrix');
+            opts = {solid: solid.checked || solidWire.checked, wireframe: wireframe.checked || solidWire.checked};
 
-            let projectionMatrix = perspective(radians(90), canvas.width / canvas.height, -180, 180);
-            let worldRotationLoc = gl.getUniformLocation(program, 'worldRotation');
+            let eye = vec3(
+                cam.radius*Math.sin(cam.theta)*Math.cos(cam.phi),
+                cam.radius*Math.sin(cam.theta)*Math.sin(cam.phi),
+                cam.radius*Math.cos(cam.theta));
 
-            let bufferInfo = {};
-            let opts = {solid: solid.checked || solidWire.checked, wireframe: wireframe.checked || solidWire.checked};
+            modelViewMatrix  = lookAt(eye, cam.at , cam.up);
+            projectionMatrix = perspective(cam.fovy, cam.aspect, cam.near, cam.far);
 
-            gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(ortho(-8, 8, -8, 8, -8, 8)) );
-            gl.uniform3fv(worldRotationLoc, drawing.world.rotationMatrix);
+            bufferInfo.vPosition = gl.getAttribLocation(program, "vPosition");
+            bufferInfo.vColor = gl.getAttribLocation(program, "vColor");
+            bufferInfo.wireframeLoc = gl.getUniformLocation(program, 'wireframe');
+            bufferInfo.objSelectedLoc = gl.getUniformLocation(program, 'objSelected');
+            modelViewMatrixLoc = gl.getUniformLocation(program, 'modelViewMatrix');
+            projectionMatrixLoc = gl.getUniformLocation(program, 'projectionMatrix');
+
+            gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
+            gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix));
 
             gl.enable(gl.DEPTH_TEST);
             gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
 
-            bufferInfo.vPosition = vPosition;
-            bufferInfo.vColor = vColor;
-            bufferInfo.wireframeLoc = wireframeLoc;
-
             for(let object of objects) {
+                opts.selected = object.dom.className.indexOf('active') >= 0;
                 object.draw(gl, bufferInfo, opts);
             }
             requestAnimFrame(drawing.render);
@@ -94,19 +97,8 @@ let application = (() => {
     let transformZ = document.getElementById('transformZ');
 
     let objectsList = document.getElementById('objects-list');
-    let addObjectButton = document.getElementById('addObjectButton');
-    let addObjectModal  = document.getElementById('addObjectModal');
 
-    let dismissModal = document.getElementById('dismissModal');
-
-    addObjectButton.addEventListener('click', evt => {
-        addObjectModal.style.display = 'block';
-    });
-    dismissModal.addEventListener('click', evt => {
-        addObjectModal.style.display = 'none';
-    });
-
-    let mouse = {pressed: false, lastPosition: null, startRotationX: 0, startRotationY: 0};
+    document.getElementById('zoomCtrl').addEventListener('input', evt => drawing.eyeDistance = (50 - evt.target.value));
 
     return {
         main() {
@@ -120,7 +112,7 @@ let application = (() => {
                 if(evt.target.className.indexOf('active') < 0 ) {
                     dom_helper.clearSelection(evt.target.parentNode.children);
                 }
-                evt.target.className = 'active';
+                dom_helper.setActive(evt.target);
             };
             let updateTransformValues = selectedId => {
                 let object = ObjectManager.find(selectedId);
@@ -147,7 +139,7 @@ let application = (() => {
                 evt => updateTransformValues(dom_helper.getSelectedFromList(objectsList.children, 'id')));
             document.getElementById('scaleTransform').addEventListener('change',
                 evt => updateTransformValues(dom_helper.getSelectedFromList(objectsList.children, 'id')));
-            document.getElementById('rotationTransform').addEventListener('change',
+            document.getElementById('rotateTransform').addEventListener('change',
                 evt => updateTransformValues(dom_helper.getSelectedFromList(objectsList.children, 'id')));
 
             let transform = (value, axis) => {
@@ -176,43 +168,21 @@ let application = (() => {
             transformY.addEventListener('input', evt => transform(parseFloat(evt.target.value), 1));
             transformZ.addEventListener('input', evt => transform(parseFloat(evt.target.value), 2));
 
-            let newObjectDom = document.getElementById('new-object');
-            newObjectDom.addEventListener('click', evt => {
-                let what = evt.target.getAttribute('data-value');
-                let object = ObjectManager.buildObject(what);
+            for(let btn of document.querySelectorAll('.add-object-btn')) {
+                btn.addEventListener('click', evt => {
+                    let what = evt.target.getAttribute('data-value');
+                    let object = ObjectManager.buildObject(what);
 
-                drawing.append(object);
-                dom_helper.clearSelection(objectsList.children);
+                    drawing.append(object);
+                    dom_helper.clearSelection(objectsList.children);
 
-                object.dom.className = 'active';
-                object.dom.scrollIntoView();
-                updateTransformValues(object.id);
-                addObjectModal.style.display = 'none';
-            });
+                    dom_helper.setActive(object.dom);
+                    object.dom.scrollIntoView();
+                    updateTransformValues(object.id);
+                });
+            }
 
             drawing.render();
-        },
-        mousedown(evt) {
-            mouse.pressed = true;
-            mouse.lastPosition = dom_helper.getClickPosition(evt);
-            mouse.startRotationY = drawing.world.thetaY;
-            mouse.startRotationX = drawing.world.thetaX;
-        },
-        mousemove(evt) {
-            if(mouse.pressed && mouse.lastPosition) {
-                let current = dom_helper.getClickPosition(evt);
-                let dx = mouse.lastPosition[0] - current[0];
-                let dy = mouse.lastPosition[1] - current[1];
-
-                drawing.world.thetaY = mouse.startRotationY + 360 * dx / canvas.height;
-                drawing.world.thetaX = mouse.startRotationX + 360 * dy / canvas.width;
-            }
-        },
-        mouseup(evt) {
-            mouse.pressed = false;
-            mouse.lastPosition = null;
-            mouse.startRotationY = 0;
-            mouse.startRotationX = 0;
         },
     };
 })();
