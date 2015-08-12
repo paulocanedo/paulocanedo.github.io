@@ -22,6 +22,9 @@ let ObjectCreator = (() => {
                 get translateValues() { return [translateMatrix[0][3], translateMatrix[1][3], translateMatrix[2][3]]; },
                 get scaleValues() { return [scaleMatrix[0][0], scaleMatrix[1][1], scaleMatrix[2][2]]; },
                 get rotateValues() { return _rotateValues; },
+                get vertexArray() { return flatten(vertices); },
+                get indiceArray() { return flatIndices; },
+                get colorArray() { return flatColors; },
 
                 translate({x, y, z}) {
                     if(x !== undefined) translateMatrix[0][3] = x;
@@ -114,6 +117,23 @@ let ObjectCreator = (() => {
                     if(wireframe) {
                         gl.uniform1i(wireframeLoc, 1);
                         gl.drawElements(gl.LINES, flatIndices.length, gl.UNSIGNED_SHORT, 0);
+                    }
+                },
+
+                delete(gl) {
+                    if(buffers.initialized) {
+                        gl.bindBuffer(gl.ARRAY_BUFFER, buffers.verticeId);
+                        gl.bufferSubData(gl.ARRAY_BUFFER, 0, null);
+
+                        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.indiceId);
+                        gl.bufferSubData(gl.ELEMENT_ARRAY_BUFFER, 0, null);
+
+                        gl.bindBuffer(gl.ARRAY_BUFFER, buffers.colorId);
+                        gl.bufferSubData(gl.ARRAY_BUFFER, 0, null);
+
+                        gl.deleteBuffer(buffers.colorId);
+                        gl.deleteBuffer(buffers.indiceId);
+                        gl.deleteBuffer(buffers.verticeId);
                     }
                 }
             };

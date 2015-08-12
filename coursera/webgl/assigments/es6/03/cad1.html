@@ -58,6 +58,10 @@
             <input type="range" id="zoomCtrl" min="4" max="50" step="1" />
         </ul>
     </div>
+
+    <button type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#myModal">
+      JSON
+    </button>
   </div>
 
 </nav>
@@ -105,22 +109,20 @@
         </div>
       </div>
 
-      <!-- <div class="panel panel-default float-form float-form-p3">
-          <div class="panel-heading">
-              <h3 class="panel-title">Properties</h3>
-          </div>
-          <div class="panel-body">
-              <ul class="list-group">
-                  <li class="list-group-item">Bands <input type="number" value="0.0" step="0.1"></li>
-                  <li class="list-group-item">Vertical Bands <input type="number" value="0.0" step="0.1"></li>
-                  <li class="list-group-item">Horizontal Bands <input type="number" value="0.0" step="0.1"></li>
-                  <li class="list-group-item">Radius <input type="number" value="0.0" step="0.1"></li>
-                  <li class="list-group-item">Radius Top <input type="number" value="0.0" step="0.1"></li>
-                  <li class="list-group-item">Radius Bottom <input type="number" value="0.0" step="0.1"></li>
-              </ul>
-          </div>
-      </div> -->
+  </div>
+</div>
 
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">JSON Output</h4>
+      </div>
+      <div class="modal-body">
+          <pre id="json-output"></pre>
+      </div>
+    </div>
   </div>
 </div>
 

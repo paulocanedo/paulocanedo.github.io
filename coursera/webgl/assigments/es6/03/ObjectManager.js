@@ -3,13 +3,17 @@ let ObjectManager = (() => {
     let collection = [];
     let domObjects = document.getElementById('objects-list');
 
-    let createDeleteButton = object => {
+    let createDeleteButton = (object, parentNode) => {
         let root = document.createElement('span');
         let deleteNode = document.createElement('i');
         deleteNode.className = 'fa fa-trash-o';
 
         root.className = 'badge delete-button';
         root.appendChild(deleteNode);
+        root.addEventListener('click', evt => {
+            drawing.remove(object);
+            domObjects.removeChild(parentNode);
+        });
         return root;
     };
     let createDescNode = object => {
@@ -65,7 +69,7 @@ let ObjectManager = (() => {
             node.setAttribute('data-id', object.id);
             node.className = 'list-group-item no-selectable default-cursor';
 
-            node.appendChild(createDeleteButton(object));
+            node.appendChild(createDeleteButton(object, node));
             node.appendChild(createDescNode(object));
 
             return node;

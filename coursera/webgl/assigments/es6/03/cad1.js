@@ -5,7 +5,7 @@ let drawing = (() => {
     let canvas;
     let program;
 
-    let objects = [];
+    let objects = Set();
 
     let solid     = document.getElementById('solidId');
     let wireframe = document.getElementById('wireframeId');
@@ -52,8 +52,24 @@ let drawing = (() => {
 
             program = initShaders(gl, "vertex-shader", "fragment-shader" );
         },
+        writeJson() {
+            let output = [];
+            for(let elem of objects) {
+                output.push({
+                    vertices: elem.vertexArray,
+                    colors: elem.colorArray,
+                    indices: elem.indiceArray
+                });
+            }
+            document.getElementById('json-output').innerHTML = '';
+            document.getElementById('json-output').appendChild(document.createTextNode(JSON.stringify(output, null, 4)));
+        },
         append(object) {
-            objects.push(object);
+            objects.add(object);
+        },
+        remove(object) {
+            objects.delete(object);
+            object.delete(gl);
         },
         render() {
             gl.useProgram( program );
