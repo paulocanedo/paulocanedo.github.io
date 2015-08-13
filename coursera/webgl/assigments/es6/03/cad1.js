@@ -5,7 +5,7 @@ let drawing = (() => {
     let canvas;
     let program;
 
-    let objects = Set();
+    let objects = new Set();
 
     let solid     = document.getElementById('solidId');
     let wireframe = document.getElementById('wireframeId');
@@ -30,6 +30,11 @@ let drawing = (() => {
         zoom(zoomIn = true) {
             let amount = zoomIn ? -1.0 : 1.0;
             cam.radius = Math.min(Math.max(4.0, cam.radius + amount), 50);
+            return cam.radius;
+        },
+        setCamOrientation(theta, phi) {
+            cam.theta = theta;
+            cam.phi = phi;
         },
         set eyeDistance(distance) {
             cam.radius = cam.radius = Math.min(Math.max(4.0, distance), 50);
@@ -52,17 +57,12 @@ let drawing = (() => {
 
             program = initShaders(gl, "vertex-shader", "fragment-shader" );
         },
-        writeJson() {
+        exportJson() {
             let output = [];
             for(let elem of objects) {
-                output.push({
-                    vertices: elem.vertexArray,
-                    colors: elem.colorArray,
-                    indices: elem.indiceArray
-                });
+                output.push(elem);
             }
-            document.getElementById('json-output').innerHTML = '';
-            document.getElementById('json-output').appendChild(document.createTextNode(JSON.stringify(output, null, 4)));
+            return JSON.stringify(output, null, 2);
         },
         append(object) {
             objects.add(object);
@@ -74,6 +74,7 @@ let drawing = (() => {
         render() {
             gl.useProgram( program );
 
+            cam.aspect = gl.canvas.width / gl.canvas.height;
             opts = {solid: solid.checked || solidWire.checked, wireframe: wireframe.checked || solidWire.checked};
 
             let eye = vec3(
@@ -115,12 +116,33 @@ let application = (() => {
     let objectsList = document.getElementById('objects-list');
 
     document.getElementById('zoomCtrl').addEventListener('input', evt => drawing.eyeDistance = (50 - evt.target.value));
+    document.getElementById('jsonBtn').addEventListener('click', evt => {
+        let dom = document.getElementById('json-output');
+        dom.innerHTML = '';
+        dom.appendChild(document.createTextNode(drawing.exportJson()));
+    });
 
     return {
+        updateTransformValues(selectedId, domElem) {
+            let object = ObjectManager.find(selectedId);
+            if(object) {
+                let values = null;
+                let transformation = domElem.value;
+                if(transformation === 'translate') {
+                    values = object.translateValues;
+                } else if(transformation === 'scale') {
+                    values = object.scaleValues;
+                } else if(transformation === 'rotate') {
+                    values = object.rotateValues;
+                }
+
+                transformX.value = values[Axis.X];
+                transformY.value = values[Axis.Y];
+                transformZ.value = values[Axis.Z];
+            }
+        },
         main() {
-            canvas.addEventListener('mousedown', application.mousedown);
-            canvas.addEventListener('mousemove', application.mousemove);
-            canvas.addEventListener('mouseup', application.mouseup);
+            mouse_events.install(canvas);
 
             let installList = evt => {
                 if(evt.target.tagName !== 'LI') return;
@@ -130,33 +152,16 @@ let application = (() => {
                 }
                 dom_helper.setActive(evt.target);
             };
-            let updateTransformValues = selectedId => {
-                let object = ObjectManager.find(selectedId);
-                if(object) {
-                    let values = null;
-                    let what = dom_helper.querySelected('transformation').value;
-                    if(what === 'translate') {
-                        values = object.translateValues;
-                    } else if(what === 'scale') {
-                        values = object.scaleValues;
-                    } else if(what === 'rotate') {
-                        values = object.rotateValues;
-                    }
-
-                    transformX.value = values[Axis.X];
-                    transformY.value = values[Axis.Y];
-                    transformZ.value = values[Axis.Z];
-                }
-            };
-
             objectsList.addEventListener('click', installList);
-            objectsList.addEventListener('click', evt => updateTransformValues(evt.target.getAttribute('data-id')));
-            document.getElementById('translateTransform').addEventListener('change',
-                evt => updateTransformValues(dom_helper.getSelectedFromList(objectsList.children, 'id')));
-            document.getElementById('scaleTransform').addEventListener('change',
-                evt => updateTransformValues(dom_helper.getSelectedFromList(objectsList.children, 'id')));
-            document.getElementById('rotateTransform').addEventListener('change',
-                evt => updateTransformValues(dom_helper.getSelectedFromList(objectsList.children, 'id')));
+            objectsList.addEventListener('click',
+                evt => application.updateTransformValues(evt.target.getAttribute('data-id'), dom_helper.querySelected('transformation')));
+
+            document.getElementById('translateTransform').addEventListener('click',
+                evt => application.updateTransformValues(dom_helper.getSelectedFromList(objectsList.children, 'id'), evt.target.children[0]));
+            document.getElementById('scaleTransform').addEventListener('click',
+                evt => application.updateTransformValues(dom_helper.getSelectedFromList(objectsList.children, 'id'), evt.target.children[0]));
+            document.getElementById('rotateTransform').addEventListener('click',
+                evt => application.updateTransformValues(dom_helper.getSelectedFromList(objectsList.children, 'id'), evt.target.children[0]));
 
             let transform = (value, axis) => {
                 let selectedId = dom_helper.getSelectedFromList(objectsList.children, 'id');
@@ -194,7 +199,7 @@ let application = (() => {
 
                     dom_helper.setActive(object.dom);
                     object.dom.scrollIntoView();
-                    updateTransformValues(object.id);
+                    application.updateTransformValues(object.id, dom_helper.querySelected('transformation'));
                 });
             }
 

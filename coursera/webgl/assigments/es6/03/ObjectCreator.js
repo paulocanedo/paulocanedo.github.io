@@ -22,9 +22,6 @@ let ObjectCreator = (() => {
                 get translateValues() { return [translateMatrix[0][3], translateMatrix[1][3], translateMatrix[2][3]]; },
                 get scaleValues() { return [scaleMatrix[0][0], scaleMatrix[1][1], scaleMatrix[2][2]]; },
                 get rotateValues() { return _rotateValues; },
-                get vertexArray() { return flatten(vertices); },
-                get indiceArray() { return flatIndices; },
-                get colorArray() { return flatColors; },
 
                 translate({x, y, z}) {
                     if(x !== undefined) translateMatrix[0][3] = x;
@@ -135,6 +132,15 @@ let ObjectCreator = (() => {
                         gl.deleteBuffer(buffers.indiceId);
                         gl.deleteBuffer(buffers.verticeId);
                     }
+                },
+
+                toJSON() {
+                    return {
+                        name: name,
+                        vertices: flatVertices,
+                        colors: flatColors,
+                        indices: flatIndices
+                    };
                 }
             };
         },

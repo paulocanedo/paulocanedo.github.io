@@ -12,7 +12,7 @@ let Cube = (() => {
     };
 
     let multiColor = [
-       vec4( 0.0, 0.0, 0.0, 1.0 ),  // black
+       vec4( 1.0, 1.0, 1.0, 1.0 ),  // black
        vec4( 1.0, 0.0, 0.0, 1.0 ),  // red
        vec4( 1.0, 1.0, 0.0, 1.0 ),  // yellow
        vec4( 0.0, 1.0, 0.0, 1.0 ),  // green
