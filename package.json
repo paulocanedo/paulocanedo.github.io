@@ -16,7 +16,10 @@
     "url": "https://github.com/paulocanedo/paulocanedo.github.io/issues"
   },
   "devDependencies": {
-    "broccoli": "^0.16.4",
-    "broccoli-babel-transpiler": "^5.3.1"
+    "broccoli": "^0.16.5",
+    "broccoli-babel-transpiler": "^5.4.2",
+    "broccoli-concat": "0.0.13",
+    "broccoli-funnel": "^0.2.7",
+    "broccoli-merge-trees": "^0.2.3"
   }
 }
