@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Assigment 03, Coursera WebGL</title>
+    <title>Assignment 04, Coursera WebGL</title>
     <link href="/bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="/bower_components/font-awesome/css/font-awesome.min.css" rel="stylesheet">
     <link href="main.css" rel="stylesheet">
@@ -117,42 +117,55 @@
     attribute  vec3 vNormal;
     varying vec4 fColor;
 
+    varying vec3 L;
+    varying vec3 E;
+    varying vec3 H;
+    varying vec3 N;
+    varying vec4 fAmbientProduct, fDiffuseProduct, fSpecularProduct;
+    varying float fShininess;
+
     uniform vec4 ambientProduct, diffuseProduct, specularProduct;
-    uniform mat4 modelViewMatrix;
-    uniform mat4 projectionMatrix;
     uniform vec4 lightPosition;
     uniform float shininess;
+
+    uniform mat4 modelViewMatrix;
+    uniform mat4 projectionMatrix;
+
     void main()
     {
-        vec3 pos = -(modelViewMatrix * vPosition).xyz;
-        // vec3 light = vec3(-10.0,10.0,100.0);
-        vec3 light = lightPosition.xyz;
-        vec3 L = normalize( light - pos );
-
-        vec3 E = normalize( -pos );
-        vec3 H = normalize( L + E );
-
-        vec4 NN = vec4(vNormal,0);
-
-        // Transform vertex normal into eye coordinates
-
-        vec3 N = normalize( (modelViewMatrix*NN).xyz);
-
-        // Compute terms in the illumination equation
-        vec4 ambient = ambientProduct;
-
-        float Kd = max( dot(L, N), 0.0 );
-        vec4  diffuse = Kd*diffuseProduct;
-
-        float Ks = pow( max(dot(N, H), 0.0), shininess );
-        vec4  specular = Ks * specularProduct;
-
-        if( dot(L, N) < 0.0 ) {
-            specular = vec4(0.0, 0.0, 0.0, 1.0);
-        }
-
+        int isPerFragment = 1;
         gl_Position = projectionMatrix * modelViewMatrix * vPosition;
-        fColor = vec4((ambient + diffuse + specular).rgb, 1.0);
+
+        vec3 pos = -(modelViewMatrix * vPosition).xyz;
+        vec3 light = lightPosition.xyz;
+
+        L = normalize( light - pos );
+        E = normalize( -pos );
+        H = normalize( L + E );
+        // Transform vertex normal into eye coordinates
+        N = normalize((modelViewMatrix * vec4(vNormal, 0)).xyz);
+
+        if(isPerFragment == 0) {
+            // Compute terms in the illumination equation
+            vec4 ambient = ambientProduct;
+
+            float Kd = max( dot(L, N), 0.0 );
+            vec4  diffuse = Kd*diffuseProduct;
+
+            float Ks = pow( max(dot(N, H), 0.0), shininess );
+            vec4  specular = Ks * specularProduct;
+
+            if( dot(L, N) < 0.0 ) {
+                specular = vec4(0.0, 0.0, 0.0, 1.0);
+            }
+
+            fColor = vec4((ambient + diffuse + specular).rgb, 1.0);
+        } else {
+            fAmbientProduct = ambientProduct;
+            fDiffuseProduct = diffuseProduct;
+            fSpecularProduct = specularProduct;
+            fShininess = shininess;
+        }
     }
     </script>
 
@@ -160,10 +173,30 @@
     precision mediump float;
 
     varying vec4 fColor;
+    varying vec3 L;
+    varying vec3 E;
+    varying vec3 H;
+    varying vec3 N;
+    varying vec4 fAmbientProduct, fDiffuseProduct, fSpecularProduct;
+    varying float fShininess;
 
     void main()
     {
-        gl_FragColor = fColor;
+        // Compute terms in the illumination equation
+        vec4 ambient = fAmbientProduct;
+
+        float Kd = max( dot(L, N), 0.0 );
+        vec4  diffuse = Kd*fDiffuseProduct;
+
+        float Ks = pow( max(dot(N, H), 0.0), fShininess );
+        vec4  specular = Ks * fSpecularProduct;
+
+        if( dot(L, N) < 0.0 ) {
+            specular = vec4(0.0, 0.0, 0.0, 1.0);
+        }
+
+        gl_FragColor = vec4((ambient + diffuse + specular).rgb, 1.0);
+        // gl_FragColor = fColor;
     }
     </script>
 
