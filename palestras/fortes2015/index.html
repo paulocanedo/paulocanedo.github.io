@@ -5,16 +5,19 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>FORTES 2015 - ECMAScript 6, seja bem vindo ao JavaScript moderno!</title>
-    <link href="/bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="/bower_components/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+    <!-- <link href="/bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet"> -->
     <link href="main.css" rel="stylesheet">
     <link href="prismjs.css" rel="stylesheet">
   </head>
   <body>
 
-      <div id="home" class="slide">
+      <div id="home" class="slide slide-centered">
           <h1>ECMAScript 6, seja bem vindo ao JavaScript moderno!</h1>
           <h2>FORTES 2015, Palmas TO</h2>
+
+          <p><img src="images/JS6_Logo.png" /></p>
+
+          <h2>Paulo Canedo</h2>
       </div>
 
       <div id="whoami" class="slide">
@@ -39,11 +42,12 @@
               <li>ECMA International</li>
               <li>Organização dedicada a padronização Sistemas de Comunicação e Informação</li>
           </ul>
+
+          <h3>ECMAScript: JavaScript padronizado pela ECMA</h3>
       </div>
 
       <div id="s2" class="slide">
           <h2>Onde o JavaScript é utilizado?</h2>
-          <p><img src="images/JS6_Logo.png" /></p>
 
           <h3>Validar formulários em websites</h3>
           <code class="language-javascript">if(document.forms.cadastro.nome.value.length < 3) {
@@ -68,6 +72,217 @@
           </ul>
       </div>
 
+      <div id="s5" class="slide">
+          <code class="language-javascript">fs.readdir(source, function(err, files) { // http://callbackhell.com/
+  if (err) {
+    console.log('Error finding files: ' + err)
+  } else {
+    files.forEach(function(filename, fileIndex) {
+      console.log(filename)
+      gm(source + filename).size(function(err, values) {
+        if (err) {
+          console.log('Error identifying file size: ' + err)
+        } else {
+          console.log(filename + ' : ' + values)
+          aspect = (values.width / values.height)
+          widths.forEach(function(width, widthIndex) {
+            height = Math.round(width / aspect)
+            console.log('resizing ' + filename + 'to ' + height + 'x' + height)
+            this.resize(width, height).write(destination + 'w' + width + '_' + filename, function(err) {
+              if (err) console.log('Error writing file: ' + err)
+            })
+          }.bind(this))
+        }
+      })
+    })
+  }
+})</code>
+      </div>
+
+      <div id="s6" class="slide">
+          <h2>Hoisting e variáveis globais</h2>
+          <code class="language-javascript">// antipattern
+myname = "global"; // global variable
+function func() {
+	alert(myname); // "undefined"
+	var myname = "local";
+	alert(myname); // "local"
+}
+func();
+
+// the preceding code snippet will behave as if it were implemented like so:
+myname = "global"; // global variable
+function func() {
+	var myname; // same as -> var myname = undefined;
+	alert(myname); // "undefined"
+	myname = "local";
+	alert(myname); // "local"
+}
+func();</code>
+            <p>
+                <a href="https://github.com/shichuan/javascript-patterns/blob/master/general-patterns/hoisting.html">
+                    https://github.com/shichuan/javascript-patterns/blob/master/general-patterns/hoisting.html
+                </a>
+            </p>
+
+      </div>
+
+      <div id="s7" class="slide">
+          <h1>Agora começamos com JavaScript ES6</h1>
+          <img src="images/yes-finally.jpg" />
+      </div>
+
+      <div id="s7" class="slide">
+          <h1>let e const</h1>
+
+          <ul>
+              <li>let é o novo var</li>
+              <li>não permite redeclarar: syntax error</li>
+              <li>variável de escopo</li>
+              <li>não é propriedade global (sem acesso: window.variavel)</li>
+              <li>laços utilizando for criam um novo valor para cada iteração</li>
+              <li>não é permitido utilizar uma variável que ainda não foi declarada</li>
+          </ul>
+
+          <h2>const só pode ser atribuída no momento da declaração</h2>
+      </div>
+
+      <div id="s8" class="slide">
+          <h2>Laço for of</h2>
+          <code class="language-javascript">for (let index = 0; index < myArray.length; index++) {
+  console.log(myArray[index]);
+}
+
+myArray.forEach(function (value) { //ES5
+  console.log(value);
+});
+
+for (let value of myArray) { //ES6
+  console.log(value);
+}</code>
+        <h2>Iterators</h2>
+        <code class="language-javascript">let colecaoInfinita = {
+  [Symbol.iterator]: function () {
+    return this;
+  },
+  next: function () {
+    return {done: false, value: 0};
+  }
+};</code>
+      </div>
+
+      <div id="s9" class="slide">
+          <h2>Destructuring</h2>
+          <code class="language-javascript">let first = someArray[0];
+let second = someArray[1];
+let third = someArray[2];
+let [first, second, third] = someArray;
+let [head, ...tail] = [1, 2, 3, 4];
+
+let { foo, bar } = { foo: "lorem", bar: "ipsum" };
+
+for (let [key,value] of map) {
+  // ...
+}
+
+function removeBreakpoint({ url, line, column }) {
+  // ...
+}
+</code>
+      </div>
+
+      <div id="s10" class="slide">
+          <h2>Arrow functions</h2>
+          <code class="language-javascript">let a = () => 'Hellow World'; //nenhum parâmetro
+let b = param => 'Hello World' + param; //um parâmetro
+let c = (param1, param2) => param1 + param2; //mais de um parâmetro
+let d = param => { //mais de uma instrução
+  console.log('teste');
+  return 1;
+}
+
+let e = fn1 => ({}) //retorna objeto vazio</code>
+        <h3>Arrow functions não têm seu próprio objeto this</h3>
+        <h3>method syntax</h3>
+        <code class="language-javascript">{
+    ...
+    addAll(valores) { valores.forEach(elem => this.add(elem)) },
+    ...
+}</code>
+      </div>
+
+      <div id="s9" class="slide">
+          <h2>Coleções</h2>
+          <ul>
+              <li>Set</li>
+              <li>Map</li>
+              <li>WeakSet (só trabalha com objetos, não tem método size)</li>
+              <li>WeakMap (só trabalha com objetos, não tem método size)</li>
+          </ul>
+
+          <h3>Diferenças entre as coleções e o Object</h3>
+          <ul>
+              <li>Nas coleções, objetos podem ser chaves</li>
+              <li>Nas coleções existe o método has, bem mais rápido que o indexOf </li>
+              <li>Objetos não podem ser iterados com for of</li>
+              <li>Objetos não possuem uma forma eficiente de consultar seu tamanho</li>
+          </ul>
+      </div>
+
+      <div id="s10" class="slide">
+          <h1>Proxy</h1>
+          <code class="language-javascript">let obj = new Proxy({}, {
+  get: function (target, key, receiver) {
+    console.log(`getting ${key}!`);
+    return Reflect.get(target, key, receiver);
+  },
+  set: function (target, key, value, receiver) {
+    console.log(`setting ${key}!`);
+    return Reflect.set(target, key, value, receiver);
+  }
+});
+obj.count = 1;
+//output: setting count!
+++obj.count;
+//output: getting count!
+//        setting count!
+//        2</code>
+      </div>
+
+      <div id="s10" class="slide">
+          <h1>Ainda tem mais</h1>
+          <ul>
+              <li>Template strings</li>
+              <li>Rest parameters e defaults</li>
+              <li>Classes</li>
+              <li>Generators</li>
+              <li>Symbols</li>
+              <li>Módulos</li>
+              <li>... e mais alguma coisa que eu esqueci</li>
+          </ul>
+      </div>
+
+      <div id="s10" class="slide">
+          <h1>Ferramentas e como começar agora</h1>
+          <ul>
+              <li>jshint</li>
+              <li>Atom</li>
+              <li>Webstorm</li>
+              <li>Broccoli</li>
+              <li>Babel</li>
+          </ul>
+      </div>
+
+      <div id="s10" class="slide">
+          <h1>Referências e links úteis</h1>
+          <ul>
+              <li><a href="https://hacks.mozilla.org/category/es6-in-depth/">https://hacks.mozilla.org/category/es6-in-depth/</a></li>
+              <li><a href="http://jsrocks.org/pt-br/">http://jsrocks.org/pt-br/</a></li>
+              <li><a href="http://es6-features.org/">http://es6-features.org/</a></li>
+              <li><a href="http://exploringjs.com/">http://exploringjs.com/</a></li>
+          </ul>
+      </div>
+
       <!-- Modules
       Subclassing
       let and const
@@ -76,12 +291,9 @@
       Generators, continued
       Collections
       Using ES6 today with Babel and Broccoli
+
       Symbols
        -->
-
-      <div id="s5" class="slide">
-          <h2>Arrow functions</h2>
-      </div>
 
     <script type="application/javascript" src="prismjs.js"></script>
     <script type="application/javascript;version=1.7" src="index.js"></script>

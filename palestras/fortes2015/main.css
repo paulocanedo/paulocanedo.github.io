@@ -1,8 +1,41 @@
+@font-face {
+  font-family: 'Ubuntu';
+  font-style: normal;
+  font-weight: 300;
+  src: local('Ubuntu Light'), local('Ubuntu-Light'), url(/fonts/ubuntu_light.woff);
+}
+@font-face {
+  font-family: 'Ubuntu';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Ubuntu'), url(/fonts/ubuntu.woff);
+}
+@font-face {
+  font-family: 'Ubuntu';
+  font-style: normal;
+  font-weight: 700;
+  src: local('Ubuntu Bold'), local('Ubuntu-Bold'), url(/fonts/ubuntu_bold.woff);
+}
+
+html, body {
+    font-family: Ubuntu
+    font-weight: lighter;
+    font-size: 18px;
+}
+
+a {
+    color: #6699ff;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
 .slide {
     width: 800px;
     height: 600px;
     background-color: #fafcff;
-    border-radius: 2em;
     border-color: #5599ff;
     border-style: solid;
     border-width: thick;
@@ -14,6 +47,9 @@
     margin-right: auto;
     /*transform: translate(-50%,-50%);*/
     /*position: absolute;*/
+    overflow: auto;
+    margin-top: 5em;
+    margin-bottom: 5em;
 }
 
 .slide-centered {
