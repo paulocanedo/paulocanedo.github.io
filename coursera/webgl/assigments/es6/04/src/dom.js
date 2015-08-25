@@ -12,6 +12,9 @@ var dom_helper = (function () {
                 document.body.clientHeight, document.documentElement.clientHeight
             );
         },
+        getFloatArray(...elemsId) {
+            return elemsId.map((index, elem) => parseFloat(document.getElementById(index).value));
+        },
         querySelected(name) {
             let nodeList = document.getElementsByName(name);
 

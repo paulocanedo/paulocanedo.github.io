@@ -33,7 +33,7 @@ let Cylinder = (() => {
         return {vertices: vertexPositionData, indices: indexData, normals: normalData};
     };
 
-    let object = build(1.0, .5, 32);
+    let object = build(1.0, 1.0, 32);
 
     return {
         create({id}) {
@@ -42,8 +42,8 @@ let Cylinder = (() => {
                 id: id,
                 name: 'Cylinder',
                 vertices: object.vertices,
+                normals: object.normals,
                 flatIndices: new Uint16Array(object.indices),
-                flatNormals: flatten(object.normals),
                 material: {
                     ambientColor: vec4(1.0, 0.0, 0.0, 1.0),
                     diffuseColor: vec4(1.0, 0.2, 0.0, 1.0),

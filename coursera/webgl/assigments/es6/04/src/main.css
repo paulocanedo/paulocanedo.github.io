@@ -5,6 +5,18 @@
     z-index: -1;
 }
 
+.debug-log {
+    position: absolute;
+    bottom: 200px;
+    left: 1em;
+    min-width: 200px;
+    max-height: 90%;
+    overflow-y: auto;
+    border: solid 1px white;
+    padding: 6px;
+    color: white;
+}
+
 .float-form, .float-form-p1 {
     position: absolute;
     top: 70px;

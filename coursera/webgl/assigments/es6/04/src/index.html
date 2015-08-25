@@ -28,8 +28,9 @@
             Add Object <span class="caret"></span>
         </button>
         <ul class="dropdown-menu">
+            <li><a href="#" class="add-object-btn" data-value="light">Light</a></li>
             <li><a href="#" class="add-object-btn" data-value="cone">Cone</a></li>
-            <li><a href="#" class="add-object-btn" data-value="cube">Cube</a></li>
+            <!-- <li><a href="#" class="add-object-btn" data-value="cube">Cube</a></li> -->
             <li><a href="#" class="add-object-btn" data-value="cylinder">Cylinder</a></li>
             <li><a href="#" class="add-object-btn" data-value="sphere">Sphere</a></li>
         </ul>
@@ -41,7 +42,21 @@
         </button>
 
         <ul class="dropdown-menu">
-            <input type="range" id="zoomCtrl" min="4" max="50" step="1" />
+            Radius: <input type="range" value="10" min="4"   max="50" step="1" id="zoomCtrl" />
+            theta:  <input type="range"  value="0" min="0" max="6.28" step=".01" id="thetaCtrl" />
+            phi:    <input type="range"  value="0" min="0" max="6.28" step=".01" id="phiCtrl" />
+        </ul>
+    </div>
+
+    <div class="btn-group">
+        <button type="button" class="btn btn-lg btn-primary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="fa fa-lightbulb-o fa-lg"></i> <span class="caret"></span>
+        </button>
+
+        <ul class="dropdown-menu">
+            X: <input type="range" value="0" min="-20" max="20" step=".1" id="lightXCtrl" />
+            Y: <input type="range" value="0" min="-20" max="20" step=".1" id="lightYCtrl" />
+            Z: <input type="range" value="0" min="-20" max="20" step=".1" id="lightZCtrl" />
         </ul>
     </div>
 
@@ -88,9 +103,9 @@
             </div>
 
           <ul class="list-group">
-              <li class="list-group-item">X <input id="transformX" value="0"></li>
-              <li class="list-group-item">Y <input id="transformY" value="0"></li>
-              <li class="list-group-item">Z <input id="transformZ" value="0"></li>
+              <li class="list-group-item">X <input class="transformer" id="transformX" type="range" min="-5" max="5" value="0"></li>
+              <li class="list-group-item">Y <input class="transformer" id="transformY" type="range" min="-5" max="5" value="0"></li>
+              <li class="list-group-item">Z <input class="transformer" id="transformZ" type="range" min="-5" max="5" value="0"></li>
           </ul>
         </div>
       </div>
@@ -112,59 +127,55 @@
   </div>
 </div>
 
+<!-- <div class="debug-log">
+    <span id="debug"></span>
+</div> -->
+
     <script id="vertex-shader" type="x-shader/x-vertex">
-    attribute  vec4 vPosition;
-    attribute  vec3 vNormal;
-    varying vec4 fColor;
+    const int MAX_LIGHTS = 2;
 
-    varying vec3 L;
-    varying vec3 E;
-    varying vec3 H;
+    attribute vec4 vPosition;
+    attribute vec3 vNormal;
+
+    varying vec3 L[MAX_LIGHTS];
     varying vec3 N;
-    varying vec4 fAmbientProduct, fDiffuseProduct, fSpecularProduct;
-    varying float fShininess;
+    varying vec3 E;
 
-    uniform vec4 ambientProduct, diffuseProduct, specularProduct;
-    uniform vec4 lightPosition;
-    uniform float shininess;
+    uniform vec3 worldRotation;
+    uniform int numberOfLights;
+    uniform vec4 lightsPositions[MAX_LIGHTS];
 
     uniform mat4 modelViewMatrix;
     uniform mat4 projectionMatrix;
 
     void main()
     {
-        int isPerFragment = 1;
-        gl_Position = projectionMatrix * modelViewMatrix * vPosition;
+        vec3 angles = radians(worldRotation);
+        vec3 c = cos(angles);
+        vec3 s = sin(angles);
+        mat4 rx = mat4(1.0,  0.0, 0.0, 0.0,
+                       0.0,  c.x, s.x, 0.0,
+                       0.0, -s.x, c.x, 0.0,
+                       0.0,  0.0, 0.0, 1.0);
+
+        mat4 ry = mat4(c.y, 0.0, -s.y, 0.0,
+                       0.0, 1.0,  0.0, 0.0,
+                       s.y, 0.0,  c.y, 0.0,
+                       0.0, 0.0,  0.0, 1.0);
+
+        mat4 rz = mat4(c.z, -s.z, 0.0, 0.0,
+                       s.z,  c.z, 0.0, 0.0,
+                       0.0,  0.0, 1.0, 0.0,
+                       0.0,  0.0, 0.0, 1.0);
+
+        gl_Position = projectionMatrix * modelViewMatrix * rx * ry * rz * vPosition;
 
         vec3 pos = -(modelViewMatrix * vPosition).xyz;
-        vec3 light = lightPosition.xyz;
-
-        L = normalize( light - pos );
         E = normalize( -pos );
-        H = normalize( L + E );
-        // Transform vertex normal into eye coordinates
-        N = normalize((modelViewMatrix * vec4(vNormal, 0)).xyz);
-
-        if(isPerFragment == 0) {
-            // Compute terms in the illumination equation
-            vec4 ambient = ambientProduct;
-
-            float Kd = max( dot(L, N), 0.0 );
-            vec4  diffuse = Kd*diffuseProduct;
-
-            float Ks = pow( max(dot(N, H), 0.0), shininess );
-            vec4  specular = Ks * specularProduct;
-
-            if( dot(L, N) < 0.0 ) {
-                specular = vec4(0.0, 0.0, 0.0, 1.0);
-            }
-
-            fColor = vec4((ambient + diffuse + specular).rgb, 1.0);
-        } else {
-            fAmbientProduct = ambientProduct;
-            fDiffuseProduct = diffuseProduct;
-            fSpecularProduct = specularProduct;
-            fShininess = shininess;
+        N = normalize(modelViewMatrix * vec4(vNormal, 0.0)).xyz;
+        for(int i=0; i<MAX_LIGHTS; i++) {
+            vec3 light = lightsPositions[i].xyz;
+            L[i] = normalize( light[i] - pos );
         }
     }
     </script>
@@ -172,31 +183,39 @@
     <script id="fragment-shader" type="x-shader/x-fragment">
     precision mediump float;
 
-    varying vec4 fColor;
-    varying vec3 L;
-    varying vec3 E;
-    varying vec3 H;
+    const int MAX_LIGHTS = 2;
+
+    varying vec3 L[MAX_LIGHTS];
     varying vec3 N;
-    varying vec4 fAmbientProduct, fDiffuseProduct, fSpecularProduct;
-    varying float fShininess;
+    varying vec3 E;
+
+    uniform vec4 ambientProduct, diffuseProduct, specularProduct;
+    uniform float shininess;
 
     void main()
     {
         // Compute terms in the illumination equation
-        vec4 ambient = fAmbientProduct;
+        vec4 ambient = ambientProduct;
 
-        float Kd = max( dot(L, N), 0.0 );
-        vec4  diffuse = Kd*fDiffuseProduct;
+        vec4 diffuse = vec4(0.0, 0.0, 0.0, 0.0);
+        vec4 specular = vec4(0.0, 0.0, 0.0, 0.0);
 
-        float Ks = pow( max(dot(N, H), 0.0), fShininess );
-        vec4  specular = Ks * fSpecularProduct;
+        for(int i=0; i<MAX_LIGHTS; i++) {
+            vec3 Li = L[i];
+            vec3 H  = normalize(Li+E);
 
-        if( dot(L, N) < 0.0 ) {
-            specular = vec4(0.0, 0.0, 0.0, 1.0);
+            float Kd = max(dot(Li, N), 0.0);
+            diffuse += Kd*diffuseProduct;
+
+            float Ks  = pow( max(dot(N, H), 0.0), shininess );
+            specular += Ks * specularProduct;
+
+            if( dot(Li, N) < 0.0 ) {
+                specular = vec4(0.0, 0.0, 0.0, 1.0);
+            }
         }
-
         gl_FragColor = vec4((ambient + diffuse + specular).rgb, 1.0);
-        // gl_FragColor = fColor;
+
     }
     </script>
 
@@ -216,6 +235,7 @@
     <script type="application/javascript;version=1.7" src="Cone.js"></script>
     <script type="application/javascript;version=1.7" src="Cylinder.js"></script>
     <script type="application/javascript;version=1.7" src="Sphere.js"></script>
+    <script type="application/javascript;version=1.7" src="Light.js"></script>
     <script type="application/javascript;version=1.7" src="dom.js"></script>
     <script type="application/javascript;version=1.7" src="mouse_events.js"></script>
     <script type="application/javascript;version=1.7" src="drawing.js"></script>

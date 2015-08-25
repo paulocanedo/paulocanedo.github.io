@@ -39,8 +39,8 @@ let Cube = (() => {
                 id: id,
                 name: 'Cube',
                 vertices: buildRect(0,0,0.5, 1, 1).concat(buildRect(0,0,-0.5, 1, 1)),
+                normals: buildRect(0,0,0.5, 1, 1).concat(buildRect(0,0,-0.5, 1, 1)),
                 flatIndices: new Uint16Array(_indicesTriangles),
-                flatNormals: flatten(buildRect(0,0,0.5, 1, 1).concat(buildRect(0,0,-0.5, 1, 1))),
                 material: {
                     ambientColor: vec4(1.0, 0.0, 1.0, 1.0),
                     diffuseColor: vec4(1.0, 0.8, 0.0, 1.0),

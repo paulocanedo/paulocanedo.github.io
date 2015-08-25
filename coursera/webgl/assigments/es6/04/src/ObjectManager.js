@@ -1,6 +1,7 @@
 let ObjectManager = (() => {
     let control = -1;
-    let collection = [];
+    let lights = new Set();
+    let collection = new Map();
     let domObjects = document.getElementById('objects-list');
 
     let createDeleteButton = (object, parentNode) => {
@@ -11,7 +12,7 @@ let ObjectManager = (() => {
         root.className = 'badge delete-button';
         root.appendChild(deleteNode);
         root.addEventListener('click', evt => {
-            drawing.remove(object);
+            ObjectManager.deleteObject(object);
             domObjects.removeChild(parentNode);
         });
         return root;
@@ -24,7 +25,8 @@ let ObjectManager = (() => {
     return {
         get lastUuid() { return control; },
         get newUuid() { return ++control; },
-        get getCollection() { return collection; },
+        get collection() { return collection; },
+        get lights() { return lights; },
 
         buildObject(what, params = {}) {
             let object = null;
@@ -47,21 +49,32 @@ let ObjectManager = (() => {
                 case 'sphere':
                     object = Sphere.create(params);
                     break;
+                case 'light':
+                    object = Light.create(params);
+                    lights.add(object);
+                    break;
                 default:
                     throw Error(`no object '${what}' available to build`);
             }
             let domObject = this.newListItem(object);
             object.dom = domObject;
             domObjects.appendChild(domObject);
-            return collection[this.lastUuid] = object;
+
+            collection.set(this.lastUuid, object);
+            return object;
+        },
+
+        deleteObject(object) {
+            if(object) {
+                object.delete();
+                lights.delete(object);
+                collection.delete(object.id);
+            }
         },
 
         find(id) {
             id = parseInt(id);
-            for(let object of collection) {
-                if(object.id === id) return object;
-            }
-            return null;
+            return collection.get(id);
         },
 
         newListItem(object) {

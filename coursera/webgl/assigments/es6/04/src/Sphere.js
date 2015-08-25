@@ -44,8 +44,8 @@ let Sphere = (() => {
                 id: id,
                 name: 'Sphere',
                 vertices: object.vertices,
+                normals: object.normals,
                 flatIndices: new Uint16Array(object.indices),
-                flatNormals: flatten(object.normals),
                 material: {
                     ambientColor: vec4(1.0, 0.0, 1.0, 1.0),
                     diffuseColor: vec4(1.0, 0.8, 0.0, 1.0),

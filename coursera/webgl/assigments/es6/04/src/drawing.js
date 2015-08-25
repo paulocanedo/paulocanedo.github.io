@@ -3,8 +3,6 @@ let drawing = (() => {
     let canvas;
     let program;
 
-    let objects = new Set();
-
     let cam = {
         radius: 10.0,
         near:  -1,    far:    1,
@@ -19,11 +17,13 @@ let drawing = (() => {
 
     let bufferInfo = {};
     bufferInfo.light = {
-        position: vec4(1.0, 1.0, 1.0, 0.0),
+        position: vec4(0.0, 0.0, 0.0, 0.0),
         ambientColor:  vec4(0.2, 0.2, 0.2, 1.0),
         diffuseColor:  vec4(1.0, 1.0, 1.0, 1.0),
         specularColor: vec4(1.0, 1.0, 1.0, 1.0),
     };
+
+    let worldRotation = vec3(0,0,0);
 
     return {
         zoom(zoomIn = true) {
@@ -31,9 +31,9 @@ let drawing = (() => {
             cam.radius = Math.min(Math.max(4.0, cam.radius + amount), 50);
             return cam.radius;
         },
-        setCamOrientation(theta, phi) {
-            cam.theta = theta;
-            cam.phi = phi;
+        setCamOrientation({theta, phi}) {
+            if(theta) cam.theta = theta;
+            if(phi) cam.phi = phi;
         },
         set eyeDistance(distance) {
             cam.radius = cam.radius = Math.min(Math.max(4.0, distance), 50);
@@ -57,20 +57,6 @@ let drawing = (() => {
 
             program = initShaders(gl, "vertex-shader", "fragment-shader" );
         },
-        exportJson() {
-            let output = [];
-            for(let elem of objects) {
-                output.push(elem);
-            }
-            return JSON.stringify(output, null, 2);
-        },
-        append(object) {
-            objects.add(object);
-        },
-        remove(object) {
-            objects.delete(object);
-            object.delete(gl);
-        },
         render() {
             gl.useProgram( program );
             gl.enable(gl.DEPTH_TEST);
@@ -91,8 +77,10 @@ let drawing = (() => {
             bufferInfo.ambientProductLoc = gl.getUniformLocation(program, "ambientProduct");
             bufferInfo.diffuseProductLoc = gl.getUniformLocation(program, "diffuseProduct");
             bufferInfo.specularProductLoc = gl.getUniformLocation(program, "specularProduct");
-            bufferInfo.lightPositionLoc = gl.getUniformLocation(program, "lightPosition");
             bufferInfo.shininessLoc = gl.getUniformLocation(program, "shininess");
+
+            // worldRotation[Axis.Y] += 2.0;
+            gl.uniform3fv(gl.getUniformLocation(program, "worldRotation"), flatten(worldRotation));
 
             modelViewMatrixLoc = gl.getUniformLocation(program, 'modelViewMatrix');
             projectionMatrixLoc = gl.getUniformLocation(program, 'projectionMatrix');
@@ -100,7 +88,15 @@ let drawing = (() => {
             gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
             gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix));
 
-            for(let object of objects) {
+            let numberOfLights = 0;
+            ObjectManager.lights.forEach(light => {
+                let lightLoc = gl.getUniformLocation(program, `lightsPositions[${numberOfLights}]`);
+                gl.uniform4fv(lightLoc, flatten(light.position));
+
+                numberOfLights++;
+            });
+
+            for(let [, object] of ObjectManager.collection) {
                 object.draw(gl, bufferInfo);
             }
             requestAnimFrame(drawing.render);

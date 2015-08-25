@@ -1,6 +1,6 @@
 let ObjectCreator = (() => {
     return {
-        create({id, vertices, flatIndices, flatNormals, material, name}) {
+        create({id, vertices, flatIndices, normals, material, name}) {
             // its required store non flat vertices to compute transformations
 
             let translateMatrix  = translate(0, 0, 0);
@@ -13,6 +13,7 @@ let ObjectCreator = (() => {
 
             let buffers = {initialized: false};
             let flatVertices = flatten(vertices);
+            let flatNormals = flatten(normals);
 
             return {
                 toString() { return `${name} [${id}]`; },
@@ -53,6 +54,7 @@ let ObjectCreator = (() => {
                     matrix = mult(rotationMatrices[Axis.X], matrix);
                     matrix = mult(translateMatrix, matrix);
                     flatVertices = flatten(geometry.multMatrixVertices(matrix, vertices));
+                    flatNormals  = flatten(geometry.multMatrixVertices(matrix, normals));
                 },
 
                 initBuffers(gl) {
@@ -91,7 +93,7 @@ let ObjectCreator = (() => {
                 draw(gl, bufferInfo) {
                     let {vPosition, vNormal, light,
                          ambientProductLoc, diffuseProductLoc, specularProductLoc,
-                         lightPositionLoc, shininessLoc} = bufferInfo;
+                         shininessLoc} = bufferInfo;
 
                     let ambientProduct = mult(light.ambientColor, material.ambientColor);
                     let diffuseProduct = mult(light.diffuseColor, material.diffuseColor);
@@ -111,7 +113,6 @@ let ObjectCreator = (() => {
                     gl.uniform4fv(ambientProductLoc, flatten(ambientProduct));
                     gl.uniform4fv(diffuseProductLoc, flatten(diffuseProduct));
                     gl.uniform4fv(specularProductLoc, flatten(specularProduct));
-                    gl.uniform4fv(lightPositionLoc, flatten(light.position));
                     gl.uniform1f(shininessLoc, material.shininess);
 
                     gl.drawElements(gl.TRIANGLES, flatIndices.length, gl.UNSIGNED_SHORT, 0);

@@ -9,6 +9,8 @@ let application = (() => {
     let objectsList = document.getElementById('objects-list');
 
     document.getElementById('zoomCtrl').addEventListener('input', evt => drawing.eyeDistance = (50 - evt.target.value));
+    document.getElementById('thetaCtrl').addEventListener('input', evt => drawing.setCamOrientation({theta: evt.target.value}));
+    document.getElementById('phiCtrl').addEventListener('input', evt => drawing.setCamOrientation({phi: evt.target.value}));
     document.getElementById('jsonBtn').addEventListener('click', evt => {
         let dom = document.getElementById('json-output');
         dom.innerHTML = '';
@@ -19,7 +21,7 @@ let application = (() => {
         updateTransformValues(selectedId, domElem) {
             let object = ObjectManager.find(selectedId);
             if(object) {
-                let values = null;
+                let values = null, min = -5, max = 5;
                 let transformation = domElem.value;
                 if(transformation === 'translate') {
                     values = object.translateValues;
@@ -27,6 +29,11 @@ let application = (() => {
                     values = object.scaleValues;
                 } else if(transformation === 'rotate') {
                     values = object.rotateValues;
+                    min = 0; max = 360;
+                }
+                for(let elem of document.querySelectorAll('.transformer')) {
+                    elem.min = object.isLight === true ? -25.0 : min;
+                    elem.max = object.isLight === true ?  25.0 : max;
                 }
 
                 transformX.value = values[Axis.X];
@@ -99,11 +106,11 @@ let application = (() => {
             //temp
             let object = ObjectManager.buildObject('sphere');
             object.translate({x: 2.0});
-            drawing.append(object);
             object = ObjectManager.buildObject('sphere');
             object.translate({x: -2});
-            object.rotate({angle: 30, axis: Axis.X});
-            drawing.append(object);
+            // object.rotate({angle: 30, axis: Axis.X});
+            ObjectManager.buildObject('light', {position: [-10, -10, -10, 0.0]});
+            ObjectManager.buildObject('light', {position: [ 10,  10,  10, 0.0]});
             dom_helper.setActive(object.dom);
             //------------------------------------------------
 
