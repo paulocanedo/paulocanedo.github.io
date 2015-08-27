@@ -1,7 +1,7 @@
 let drawing = (() => {
     let gl;
     let canvas;
-    let program;
+    let programsAvailable, program;
 
     let cam = {
         radius: 10.0,
@@ -16,16 +16,15 @@ let drawing = (() => {
     let modelViewMatrixLoc, projectionMatrixLoc;
 
     let bufferInfo = {};
-    bufferInfo.light = {
-        position: vec4(0.0, 0.0, 0.0, 0.0),
-        ambientColor:  vec4(0.2, 0.2, 0.2, 1.0),
-        diffuseColor:  vec4(1.0, 1.0, 1.0, 1.0),
-        specularColor: vec4(1.0, 1.0, 1.0, 1.0),
-    };
-
     let worldRotation = vec3(0,0,0);
+    let lightRotation = 0; //only on Y axis
 
     return {
+        set program(id) {
+            if(id >= 0 && id < programsAvailable.length) {
+                program = programsAvailable[id];
+            }
+        },
         zoom(zoomIn = true) {
             let amount = zoomIn ? -1.0 : 1.0;
             cam.radius = Math.min(Math.max(4.0, cam.radius + amount), 50);
@@ -38,24 +37,24 @@ let drawing = (() => {
         set eyeDistance(distance) {
             cam.radius = cam.radius = Math.min(Math.max(4.0, distance), 50);
         },
-        init(canvasName) {
-            canvas = document.getElementById( canvasName );
+        init(canvasName, programs) {
+            canvas = document.getElementById(canvasName);
 
-            gl = WebGLUtils.setupWebGL( canvas );
+            gl = WebGLUtils.setupWebGL(canvas);
             if ( !gl ) { alert( "WebGL isn't available" ); }
 
-            this.setDefaults(gl);
+            this.setDefaults(gl, programs);
             return canvas;
         },
-        setDefaults(gl) {
+        setDefaults(gl, programs) {
             gl.canvas.width = dom_helper.getDocumentWidth();
             gl.canvas.height = dom_helper.getDocumentHeight();
 
             gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-            // gl.clearColor(1.0, 1.0, 1.0, 1.0);
             gl.clearColor(0, 0, 0, 1.0);
 
-            program = initShaders(gl, "vertex-shader", "fragment-shader" );
+            programsAvailable = ShaderUtil.createPrograms(gl, programs);
+            program = programsAvailable[0];
         },
         render() {
             gl.useProgram( program );
@@ -79,22 +78,30 @@ let drawing = (() => {
             bufferInfo.specularProductLoc = gl.getUniformLocation(program, "specularProduct");
             bufferInfo.shininessLoc = gl.getUniformLocation(program, "shininess");
 
-            // worldRotation[Axis.Y] += 2.0;
             gl.uniform3fv(gl.getUniformLocation(program, "worldRotation"), flatten(worldRotation));
 
             modelViewMatrixLoc = gl.getUniformLocation(program, 'modelViewMatrix');
             projectionMatrixLoc = gl.getUniformLocation(program, 'projectionMatrix');
 
+            lightRotation = document.querySelector('#lightsMovingBtn.active') == null ? 0.0 : lightRotation + 2.0;
             gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
             gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix));
 
+            let floatLights = new Float32Array(ObjectManager.lights.size * 4);
             let numberOfLights = 0;
             ObjectManager.lights.forEach(light => {
-                let lightLoc = gl.getUniformLocation(program, `lightsPositions[${numberOfLights}]`);
-                gl.uniform4fv(lightLoc, flatten(light.position));
+                floatLights[numberOfLights * 4 + 0] = light.position[0] * Math.sin(radians(lightRotation));
+                floatLights[numberOfLights * 4 + 1] = light.position[1];
+                floatLights[numberOfLights * 4 + 2] = light.position[2] * Math.cos(radians(lightRotation));
+                floatLights[numberOfLights * 4 + 3] = light.position[3];
 
                 numberOfLights++;
             });
+            if(numberOfLights === 0) {
+                floatLights = new Float32Array([0,0,0,0]);
+            }
+            gl.uniform4fv(gl.getUniformLocation(program, 'lightsPositions'), floatLights);
+            bufferInfo.lights = ObjectManager.lights;
 
             for(let [, object] of ObjectManager.collection) {
                 object.draw(gl, bufferInfo);

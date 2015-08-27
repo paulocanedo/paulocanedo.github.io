@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Assigment 03, Coursera WebGL</title>
+    <title>Assignment 04, Coursera WebGL</title>
     <link href="/bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="/bower_components/font-awesome/css/font-awesome.min.css" rel="stylesheet">
     <link href="main.css" rel="stylesheet">
@@ -20,7 +20,7 @@
         <span class="icon-bar"></span>
         <span class="icon-bar"></span>
       </button>
-      <a class="navbar-brand" href="#">WebGL #03</a>
+      <a class="navbar-brand" href="#">WebGL #04</a>
     </div>
 
     <div class="btn-group">
@@ -28,8 +28,9 @@
             Add Object <span class="caret"></span>
         </button>
         <ul class="dropdown-menu">
+            <li><a href="#" class="add-object-btn" data-value="light">Light</a></li>
             <li><a href="#" class="add-object-btn" data-value="cone">Cone</a></li>
-            <li><a href="#" class="add-object-btn" data-value="cube">Cube</a></li>
+            <!-- <li><a href="#" class="add-object-btn" data-value="cube">Cube</a></li> -->
             <li><a href="#" class="add-object-btn" data-value="cylinder">Cylinder</a></li>
             <li><a href="#" class="add-object-btn" data-value="sphere">Sphere</a></li>
         </ul>
@@ -41,12 +42,15 @@
         </button>
 
         <ul class="dropdown-menu">
-            <input type="range" id="zoomCtrl" min="4" max="50" step="1" />
+            Radius: <input type="range" value="10" min="4"   max="50" step="1" id="zoomCtrl" />
+            theta:  <input type="range"  value="0" min="0" max="6.28" step=".01" id="thetaCtrl" />
+            phi:    <input type="range"  value="0" min="0" max="6.28" step=".01" id="phiCtrl" />
         </ul>
     </div>
 
-    <button type="button" id="jsonBtn" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#myModal">
-      JSON
+    <button type="button" class="btn btn-primary btn-lg"
+        data-toggle="button" aria-pressed="false" autocomplete="off" id="lightsMovingBtn">
+        Lights moving
     </button>
   </div>
 
@@ -70,7 +74,7 @@
 
       <div class="panel panel-default float-form float-form-p2">
         <div class="panel-heading">
-            <h3 class="panel-title">Transformation</h3>
+            <h3 class="panel-title" id="propertiesLabel">Properties</h3>
         </div>
         <div class="panel-body">
             <div class="btn-group" data-toggle="buttons">
@@ -88,10 +92,16 @@
             </div>
 
           <ul class="list-group">
-              <li class="list-group-item">X <input id="transformX" value="0"></li>
-              <li class="list-group-item">Y <input id="transformY" value="0"></li>
-              <li class="list-group-item">Z <input id="transformZ" value="0"></li>
+              <li class="list-group-item">X <input class="transformer" id="transformX" type="range" min="-5" max="5" value="0"></li>
+              <li class="list-group-item">Y <input class="transformer" id="transformY" type="range" min="-5" max="5" value="0"></li>
+              <li class="list-group-item">Z <input class="transformer" id="transformZ" type="range" min="-5" max="5" value="0"></li>
           </ul>
+
+          <ul class="list-group">
+              <li class="list-group-item">Ambient:  <button class="btn-color-picker" id="ambientColorBtn"></button></li>
+              <li class="list-group-item">Diffuse:  <button class="btn-color-picker" id="diffuseColorBtn"></button></li>
+              <li class="list-group-item">Specular: <button class="btn-color-picker" id="specularColorBtn"></button></li>
+          <ul>
         </div>
       </div>
 
@@ -112,65 +122,13 @@
   </div>
 </div>
 
-    <script id="vertex-shader" type="x-shader/x-vertex">
-    attribute  vec4 vPosition;
-    attribute  vec3 vNormal;
-    varying vec4 fColor;
-
-    uniform vec4 ambientProduct, diffuseProduct, specularProduct;
-    uniform mat4 modelViewMatrix;
-    uniform mat4 projectionMatrix;
-    uniform vec4 lightPosition;
-    uniform float shininess;
-    void main()
-    {
-        vec3 pos = -(modelViewMatrix * vPosition).xyz;
-        // vec3 light = vec3(-10.0,10.0,100.0);
-        vec3 light = lightPosition.xyz;
-        vec3 L = normalize( light - pos );
-
-        vec3 E = normalize( -pos );
-        vec3 H = normalize( L + E );
-
-        vec4 NN = vec4(vNormal,0);
-
-        // Transform vertex normal into eye coordinates
-
-        vec3 N = normalize( (modelViewMatrix*NN).xyz);
-
-        // Compute terms in the illumination equation
-        vec4 ambient = ambientProduct;
-
-        float Kd = max( dot(L, N), 0.0 );
-        vec4  diffuse = Kd*diffuseProduct;
-
-        float Ks = pow( max(dot(N, H), 0.0), shininess );
-        vec4  specular = Ks * specularProduct;
-
-        if( dot(L, N) < 0.0 ) {
-            specular = vec4(0.0, 0.0, 0.0, 1.0);
-        }
-
-        gl_Position = projectionMatrix * modelViewMatrix * vPosition;
-        fColor = vec4((ambient + diffuse + specular).rgb, 1.0);
-    }
-    </script>
-
-    <script id="fragment-shader" type="x-shader/x-fragment">
-    precision mediump float;
-
-    varying vec4 fColor;
-
-    void main()
-    {
-        gl_FragColor = fColor;
-    }
-    </script>
-
+<!-- <div class="debug-log">
+    <span id="debug"></span>
+</div> -->
     <script src="/bower_components/jquery/dist/jquery.min.js"></script>
     <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
     <script type="application/javascript" src="/coursera/webgl/Common/webgl-utils.js"></script>
-    <script type="application/javascript" src="/coursera/webgl/Common/initShaders.js"></script>
+    <!-- // <script type="application/javascript" src="/coursera/webgl/Common/initShaders.js"></script> -->
     <script type="application/javascript" src="/coursera/webgl/Common/MV.js"></script>
     <script type="application/javascript" src="/coursera/webgl/Common/flatten.js"></script>
 

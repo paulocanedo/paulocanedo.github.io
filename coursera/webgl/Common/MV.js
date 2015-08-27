@@ -165,7 +165,7 @@ function mat4()
 function equal( u, v )
 {
     if ( u.length != v.length ) { return false; }
-   
+
     if ( u.matrix && v.matrix ) {
         for ( var i = 0; i < u.length; ++i ) {
             if ( u[i].length != v[i].length ) { return false; }
@@ -486,7 +486,7 @@ function transpose( m )
     }
 
     result.matrix = true;
-    
+
     return result;
 }
 
@@ -533,7 +533,7 @@ function cross( u, v )
         throw "cross(): second argument is not a vector of at least 3";
     }
 
-    var result = [ 
+    var result = [
         u[1]*v[2] - u[2]*v[1],
         u[2]*v[0] - u[0]*v[2],
         u[0]*v[1] - u[1]*v[0]
@@ -552,17 +552,17 @@ function length( u )
 //----------------------------------------------------------------------------
 
 function normalize( u, excludeLastComponent )
-{ 
+{
     if ( excludeLastComponent ) {
         var last = u.pop();
     }
-    
+
     var len = length( u );
 
     if ( !isFinite(len) ) {
         throw "normalize: vector " + u + " has zero length";
     }
-    
+
     for ( var i = 0; i < u.length; ++i ) {
         u[i] /= len;
     }
@@ -570,7 +570,7 @@ function normalize( u, excludeLastComponent )
     if ( excludeLastComponent ) {
         u.push( last );
     }
-            
+
     return u;
 }
 
@@ -581,7 +581,7 @@ function mix( u, v, s )
     if ( typeof s !== "number" ) {
         throw "mix: the last paramter " + s + " must be a number";
     }
-    
+
     if ( u.length != v.length ) {
         throw "vector dimension mismatch";
     }
@@ -609,7 +609,7 @@ function scale( s, u )
     for ( var i = 0; i < u.length; ++i ) {
         result.push( s * u[i] );
     }
-    
+
     return result;
 }
 

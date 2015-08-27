@@ -45,10 +45,10 @@ let Cylinder = (() => {
                 normals: object.normals,
                 flatIndices: new Uint16Array(object.indices),
                 material: {
-                    ambientColor: vec4(1.0, 0.0, 0.0, 1.0),
+                    ambientColor: vec4(0.7, 0.7, 0.0, 1.0),
                     diffuseColor: vec4(1.0, 0.2, 0.0, 1.0),
                     specularColor: vec4(1.0, 0.2, 0.0, 1.0),
-                    shininess: 100.0
+                    shininess: 20.0
                 }
             });
         }

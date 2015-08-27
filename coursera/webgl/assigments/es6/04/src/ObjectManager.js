@@ -50,7 +50,12 @@ let ObjectManager = (() => {
                     object = Sphere.create(params);
                     break;
                 case 'light':
+                    if(!params.position) params.position = vec4(0, 0, 0, 0);
+                    if(!params.ambientColor) params.ambientColor = vec4(0.2, 0.2, 0.2, 1.0);
+                    if(!params.diffuseColor) params.diffuseColor = vec4(1.0, 1.0, 1.0, 1.0);
+                    if(!params.specularColor) params.specularColor = vec4(1.0, 1.0, 1.0, 1.0);
                     object = Light.create(params);
+
                     lights.add(object);
                     break;
                 default:

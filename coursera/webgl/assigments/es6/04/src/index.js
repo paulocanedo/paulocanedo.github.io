@@ -1,7 +1,6 @@
 "use strict";
 
 let application = (() => {
-    let canvas = drawing.init("gl-canvas");
     let transformX = document.getElementById('transformX');
     let transformY = document.getElementById('transformY');
     let transformZ = document.getElementById('transformZ');
@@ -11,11 +10,6 @@ let application = (() => {
     document.getElementById('zoomCtrl').addEventListener('input', evt => drawing.eyeDistance = (50 - evt.target.value));
     document.getElementById('thetaCtrl').addEventListener('input', evt => drawing.setCamOrientation({theta: evt.target.value}));
     document.getElementById('phiCtrl').addEventListener('input', evt => drawing.setCamOrientation({phi: evt.target.value}));
-    document.getElementById('jsonBtn').addEventListener('click', evt => {
-        let dom = document.getElementById('json-output');
-        dom.innerHTML = '';
-        dom.appendChild(document.createTextNode(drawing.exportJson()));
-    });
 
     return {
         updateTransformValues(selectedId, domElem) {
@@ -36,13 +30,21 @@ let application = (() => {
                     elem.max = object.isLight === true ?  25.0 : max;
                 }
 
+                let acolor = object.ambientColor.slice(0, 3).map(elem => parseInt(elem * 255));
+                let dcolor = object.diffuseColor.slice(0, 3).map(elem => parseInt(elem * 255));
+                let scolor = object.specularColor.slice(0, 3).map(elem => parseInt(elem * 255));
+
+                document.getElementById('propertiesLabel').innerHTML = `${object} - Properties`;
+                document.getElementById('ambientColorBtn').style.backgroundColor = `rgb(${acolor.join(',')})`;
+                document.getElementById('diffuseColorBtn').style.backgroundColor = `rgb(${dcolor.join(',')})`;
+                document.getElementById('specularColorBtn').style.backgroundColor = `rgb(${scolor.join(',')})`;
                 transformX.value = values[Axis.X];
                 transformY.value = values[Axis.Y];
                 transformZ.value = values[Axis.Z];
             }
         },
-        main() {
-            mouse_events.install(canvas);
+        main(canvasId, shaders) {
+            let canvas = drawing.init(canvasId, shaders);
 
             let installList = evt => {
                 if(evt.target.tagName !== 'LI') return;
@@ -94,7 +96,6 @@ let application = (() => {
                     let what = evt.target.getAttribute('data-value');
                     let object = ObjectManager.buildObject(what);
 
-                    drawing.append(object);
                     dom_helper.clearSelection(objectsList.children);
 
                     dom_helper.setActive(object.dom);
@@ -105,13 +106,20 @@ let application = (() => {
 
             //temp
             let object = ObjectManager.buildObject('sphere');
-            object.translate({x: 2.0});
+            object.translate({x: 3.0});
             object = ObjectManager.buildObject('sphere');
-            object.translate({x: -2});
-            // object.rotate({angle: 30, axis: Axis.X});
-            ObjectManager.buildObject('light', {position: [-10, -10, -10, 0.0]});
-            ObjectManager.buildObject('light', {position: [ 10,  10,  10, 0.0]});
-            dom_helper.setActive(object.dom);
+            object.translate({x: -3.0});
+            object = ObjectManager.buildObject('cylinder');
+            object.translate({y: -2.0});
+            object = ObjectManager.buildObject('cylinder');
+            object.translate({y: 2.0});
+            object.rotate({angle: 60, axis: Axis.X});
+            object = ObjectManager.buildObject('cone');
+            ObjectManager.buildObject('light', { position: [-10,  10, -10, 0.0] });
+            ObjectManager.buildObject('light', { position: [ 10,  10, -10, 0.0] });
+            ObjectManager.buildObject('light', { position: [-10, -10, -10, 0.0] });
+            ObjectManager.buildObject('light', { position: [ 10, -10, -10, 0.0] });
+            // dom_helper.setActive(object.dom);
             //------------------------------------------------
 
             drawing.render();
@@ -119,4 +127,48 @@ let application = (() => {
     };
 })();
 
-window.addEventListener('load', application.main);
+window.addEventListener('load', () => {
+    let programs = [];
+    let count = 0;
+
+    programs.push({
+        vertexShader: {
+            source: 'shaders/fragment_lighting.vs.glsl?', type: WebGLRenderingContext.VERTEX_SHADER, content: 0
+        },
+        fragmentShader: {
+            source: 'shaders/fragment_lighting.fs.glsl?', type: WebGLRenderingContext.FRAGMENT_SHADER, content: 0
+        }
+    });
+    programs.push({
+        vertexShader: {
+            source: 'shaders/vertex_lighting.vs.glsl?', type: WebGLRenderingContext.VERTEX_SHADER, content: 0
+        },
+        fragmentShader: {
+            source: 'shaders/vertex_lighting.fs.glsl?', type: WebGLRenderingContext.FRAGMENT_SHADER, content: 0
+        }
+    });
+
+    let loadAjaxContent = (shader) => {
+        let request = new XMLHttpRequest();
+        request.onload = () => {
+            shader.content = request.responseText;
+            if(shader.source, ++count >= programs.length * 2) {
+                application.main('gl-canvas', programs);
+            }
+        };
+
+        // setTimeout(() => {
+        request.open("get", shader.source, true);
+        request.send();
+        // }, i * 5000);
+    };
+
+    for(let i=0; i<programs.length; i++) {
+        let program = programs[i];
+        let vs = program.vertexShader;
+        let fs = program.fragmentShader;
+
+        loadAjaxContent(vs);
+        loadAjaxContent(fs);
+    }
+});

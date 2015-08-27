@@ -27,6 +27,7 @@ appJs = concat(appJs, {
   // we specify a concatenation order
   inputFiles: [
       'browser-polyfill.js',
+      'ShaderUtil.js',
       'ObjectCreator.js',
       'ObjectManager.js',
       'geometry.js',
@@ -34,6 +35,7 @@ appJs = concat(appJs, {
       'Cone.js',
       'Cylinder.js',
       'Sphere.js',
+      'Light.js',
       'dom.js',
       'mouse_events.js',
       'drawing.js',
@@ -43,7 +45,13 @@ appJs = concat(appJs, {
 });
 
 // Grab the index file
-var index = funnel('src', {files: ['index.html', 'main.css']});
+var index = funnel('src', {files: [
+    'index.html', 'main.css',
+    'shaders/fragment_lighting.vs.glsl',
+    'shaders/fragment_lighting.fs.glsl',
+    'shaders/vertex_lighting.vs.glsl',
+    'shaders/vertex_lighting.fs.glsl',
+]});
 
 // Grab all our trees and
 // export them as a single and final tree

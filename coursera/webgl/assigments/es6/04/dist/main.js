@@ -3728,13 +3728,48 @@ module.exports = require('./modules/$').core;
 
 "use strict";
 
+var ShaderUtil = (function () {
+    return {
+        loadShader: function loadShader(gl, shader) {
+            var shaderId = gl.createShader(shader.type);
+            gl.shaderSource(shaderId, shader.content);
+            gl.compileShader(shaderId);
+            if (!gl.getShaderParameter(shaderId, gl.COMPILE_STATUS)) {
+                throw Error("Vertex shader failed to compile. The error log is:\n                    <pre>" + gl.getShaderInfoLog(shaderId) + "</pre>");
+            }
+            return shaderId;
+        },
+        createPrograms: function createPrograms(gl, programs) {
+            var _this = this;
+
+            var result = [];
+
+            programs.forEach(function (program) {
+                var programId = gl.createProgram();
+                gl.attachShader(programId, _this.loadShader(gl, program.vertexShader));
+                gl.attachShader(programId, _this.loadShader(gl, program.fragmentShader));
+                gl.linkProgram(programId);
+
+                if (!gl.getProgramParameter(programId, gl.LINK_STATUS)) {
+                    throw Error("Shader program failed to link.  The error log is:\n                        <pre>" + gl.getProgramInfoLog(program) + "</pre>");
+                }
+
+                result.push(programId);
+            });
+
+            return result;
+        }
+    };
+})();
+"use strict";
+
 var ObjectCreator = (function () {
     return {
         create: function create(_ref) {
             var id = _ref.id;
             var vertices = _ref.vertices;
             var flatIndices = _ref.flatIndices;
-            var flatNormals = _ref.flatNormals;
+            var normals = _ref.normals;
             var material = _ref.material;
             var name = _ref.name;
 
@@ -3748,6 +3783,7 @@ var ObjectCreator = (function () {
 
             var buffers = { initialized: false };
             var flatVertices = flatten(vertices);
+            var flatNormals = flatten(normals);
 
             return Object.defineProperties({
                 toString: function toString() {
@@ -3806,6 +3842,7 @@ var ObjectCreator = (function () {
                     matrix = mult(rotationMatrices[Axis.X], matrix);
                     matrix = mult(translateMatrix, matrix);
                     flatVertices = flatten(geometry.multMatrixVertices(matrix, vertices));
+                    flatNormals = flatten(geometry.multMatrixVertices(matrix, normals));
                 },
 
                 initBuffers: function initBuffers(gl) {
@@ -3844,16 +3881,27 @@ var ObjectCreator = (function () {
                 draw: function draw(gl, bufferInfo) {
                     var vPosition = bufferInfo.vPosition;
                     var vNormal = bufferInfo.vNormal;
-                    var light = bufferInfo.light;
+                    var lights = bufferInfo.lights;
                     var ambientProductLoc = bufferInfo.ambientProductLoc;
                     var diffuseProductLoc = bufferInfo.diffuseProductLoc;
                     var specularProductLoc = bufferInfo.specularProductLoc;
-                    var lightPositionLoc = bufferInfo.lightPositionLoc;
                     var shininessLoc = bufferInfo.shininessLoc;
 
-                    var ambientProduct = mult(light.ambientColor, material.ambientColor);
-                    var diffuseProduct = mult(light.diffuseColor, material.diffuseColor);
-                    var specularProduct = mult(light.specularColor, material.specularColor);
+                    var lightAmbientColor = vec4();
+                    var lightDiffuseColor = vec4();
+                    var lightSpecularColor = vec4();
+                    lights.forEach(function (light) {
+                        for (var i = 0; i < light.ambientColor.length; i++) {
+                            lightAmbientColor[i] += light.ambientColor[i] / 2.0;
+                            lightDiffuseColor[i] += light.diffuseColor[i] / 2.0;
+                            lightSpecularColor[i] += light.specularColor[i] / 2.0;
+                        }
+                    });
+
+                    var ambientProduct = mult(lights.size === 0 ? vec4(0.1, 0.1, 0.1, 1.0) : lightAmbientColor, material.ambientColor);
+
+                    var diffuseProduct = mult(lightDiffuseColor, material.diffuseColor);
+                    var specularProduct = mult(lightSpecularColor, material.specularColor);
 
                     this.initBuffers(gl);
                     this.flush(gl);
@@ -3869,10 +3917,13 @@ var ObjectCreator = (function () {
                     gl.uniform4fv(ambientProductLoc, flatten(ambientProduct));
                     gl.uniform4fv(diffuseProductLoc, flatten(diffuseProduct));
                     gl.uniform4fv(specularProductLoc, flatten(specularProduct));
-                    gl.uniform4fv(lightPositionLoc, flatten(light.position));
                     gl.uniform1f(shininessLoc, material.shininess);
 
-                    gl.drawElements(gl.TRIANGLES, flatIndices.length, gl.UNSIGNED_SHORT, 0);
+                    if (flatIndices.length > 0) {
+                        gl.drawElements(gl.TRIANGLES, flatIndices.length, gl.UNSIGNED_SHORT, 0);
+                    } else {
+                        gl.drawArrays(gl.TRIANGLES, 0, flatVertices.length / 3);
+                    }
                 },
 
                 "delete": function _delete(gl) {
@@ -3928,6 +3979,34 @@ var ObjectCreator = (function () {
                     },
                     configurable: true,
                     enumerable: true
+                },
+                ambientColor: {
+                    get: function get() {
+                        return material.ambientColor;
+                    },
+                    configurable: true,
+                    enumerable: true
+                },
+                specularColor: {
+                    get: function get() {
+                        return material.specularColor;
+                    },
+                    configurable: true,
+                    enumerable: true
+                },
+                diffuseColor: {
+                    get: function get() {
+                        return material.diffuseColor;
+                    },
+                    configurable: true,
+                    enumerable: true
+                },
+                vertexCount: {
+                    get: function get() {
+                        return flatVertices.length / 3;
+                    },
+                    configurable: true,
+                    enumerable: true
                 }
             });
         }
@@ -3937,7 +4016,8 @@ var ObjectCreator = (function () {
 
 var ObjectManager = (function () {
     var control = -1;
-    var collection = [];
+    var lights = new Set();
+    var collection = new Map();
     var domObjects = document.getElementById('objects-list');
 
     var createDeleteButton = function createDeleteButton(object, parentNode) {
@@ -3948,7 +4028,7 @@ var ObjectManager = (function () {
         root.className = 'badge delete-button';
         root.appendChild(deleteNode);
         root.addEventListener('click', function (evt) {
-            drawing.remove(object);
+            ObjectManager.deleteObject(object);
             domObjects.removeChild(parentNode);
         });
         return root;
@@ -3983,43 +4063,37 @@ var ObjectManager = (function () {
                 case 'sphere':
                     object = Sphere.create(params);
                     break;
+                case 'light':
+                    if (!params.position) params.position = vec4(0, 0, 0, 0);
+                    if (!params.ambientColor) params.ambientColor = vec4(0.2, 0.2, 0.2, 1.0);
+                    if (!params.diffuseColor) params.diffuseColor = vec4(1.0, 1.0, 1.0, 1.0);
+                    if (!params.specularColor) params.specularColor = vec4(1.0, 1.0, 1.0, 1.0);
+                    object = Light.create(params);
+
+                    lights.add(object);
+                    break;
                 default:
                     throw Error('no object \'' + what + '\' available to build');
             }
             var domObject = this.newListItem(object);
             object.dom = domObject;
             domObjects.appendChild(domObject);
-            return collection[this.lastUuid] = object;
+
+            collection.set(this.lastUuid, object);
+            return object;
+        },
+
+        deleteObject: function deleteObject(object) {
+            if (object) {
+                object['delete']();
+                lights['delete'](object);
+                collection['delete'](object.id);
+            }
         },
 
         find: function find(id) {
             id = parseInt(id);
-            var _iteratorNormalCompletion = true;
-            var _didIteratorError = false;
-            var _iteratorError = undefined;
-
-            try {
-                for (var _iterator = collection[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-                    var object = _step.value;
-
-                    if (object.id === id) return object;
-                }
-            } catch (err) {
-                _didIteratorError = true;
-                _iteratorError = err;
-            } finally {
-                try {
-                    if (!_iteratorNormalCompletion && _iterator['return']) {
-                        _iterator['return']();
-                    }
-                } finally {
-                    if (_didIteratorError) {
-                        throw _iteratorError;
-                    }
-                }
-            }
-
-            return null;
+            return collection.get(id);
         },
 
         newListItem: function newListItem(object) {
@@ -4048,38 +4122,45 @@ var ObjectManager = (function () {
             configurable: true,
             enumerable: true
         },
-        getCollection: {
+        collection: {
             get: function get() {
                 return collection;
             },
             configurable: true,
             enumerable: true
         },
+        lights: {
+            get: function get() {
+                return lights;
+            },
+            configurable: true,
+            enumerable: true
+        },
         selected: {
             get: function get() {
-                var _iteratorNormalCompletion2 = true;
-                var _didIteratorError2 = false;
-                var _iteratorError2 = undefined;
+                var _iteratorNormalCompletion = true;
+                var _didIteratorError = false;
+                var _iteratorError = undefined;
 
                 try {
-                    for (var _iterator2 = collection[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-                        var elem = _step2.value;
+                    for (var _iterator = collection[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                        var elem = _step.value;
 
                         if (elem.dom.className.indexOf('active') >= 0) {
                             return elem;
                         }
                     }
                 } catch (err) {
-                    _didIteratorError2 = true;
-                    _iteratorError2 = err;
+                    _didIteratorError = true;
+                    _iteratorError = err;
                 } finally {
                     try {
-                        if (!_iteratorNormalCompletion2 && _iterator2['return']) {
-                            _iterator2['return']();
+                        if (!_iteratorNormalCompletion && _iterator['return']) {
+                            _iterator['return']();
                         }
                     } finally {
-                        if (_didIteratorError2) {
-                            throw _iteratorError2;
+                        if (_didIteratorError) {
+                            throw _iteratorError;
                         }
                     }
                 }
@@ -4196,8 +4277,8 @@ var Cube = (function () {
                 id: id,
                 name: 'Cube',
                 vertices: buildRect(0, 0, 0.5, 1, 1).concat(buildRect(0, 0, -0.5, 1, 1)),
+                normals: buildRect(0, 0, 0.5, 1, 1).concat(buildRect(0, 0, -0.5, 1, 1)),
                 flatIndices: new Uint16Array(_indicesTriangles),
-                flatNormals: flatten(buildRect(0, 0, 0.5, 1, 1).concat(buildRect(0, 0, -0.5, 1, 1))),
                 material: {
                     ambientColor: vec4(1.0, 0.0, 1.0, 1.0),
                     diffuseColor: vec4(1.0, 0.8, 0.0, 1.0),
@@ -4254,8 +4335,8 @@ var Cone = (function () {
                 id: id,
                 name: 'Cone',
                 vertices: object.vertices,
+                normals: object.normals,
                 flatIndices: new Uint16Array(object.indices),
-                flatNormals: flatten(object.normals),
                 material: {
                     ambientColor: vec4(1.0, 0.0, 1.0, 1.0),
                     diffuseColor: vec4(0.0, 0.8, 1.0, 1.0),
@@ -4305,7 +4386,7 @@ var Cylinder = (function () {
         return { vertices: vertexPositionData, indices: indexData, normals: normalData };
     };
 
-    var object = build(1.0, .5, 32);
+    var object = build(1.0, 1.0, 32);
 
     return {
         create: function create(_ref) {
@@ -4315,13 +4396,13 @@ var Cylinder = (function () {
                 id: id,
                 name: 'Cylinder',
                 vertices: object.vertices,
+                normals: object.normals,
                 flatIndices: new Uint16Array(object.indices),
-                flatNormals: flatten(object.normals),
                 material: {
-                    ambientColor: vec4(1.0, 0.0, 0.0, 1.0),
+                    ambientColor: vec4(0.7, 0.7, 0.0, 1.0),
                     diffuseColor: vec4(1.0, 0.2, 0.0, 1.0),
                     specularColor: vec4(1.0, 0.2, 0.0, 1.0),
-                    shininess: 100.0
+                    shininess: 20.0
                 }
             });
         }
@@ -4329,7 +4410,85 @@ var Cylinder = (function () {
 })();
 'use strict';
 
-var Sphere = (function () {
+var SphereTetrahedronSub = (function () {
+    var va = vec4(0.0, 0.0, -1.0, 1);
+    var vb = vec4(0.0, 0.942809, 0.333333, 1);
+    var vc = vec4(-0.816497, -0.471405, 0.333333, 1);
+    var vd = vec4(0.816497, -0.471405, 0.333333, 1);
+
+    var build = function build(nSubdivisions) {
+        var vertexPositionData = [],
+            normalData = [];
+
+        function triangle(a, b, c) {
+            var t1 = subtract(b, a);
+            var t2 = subtract(c, a);
+            var normal = normalize(cross(t2, t1));
+            normal = vec4(normal);
+            normal[3] = 0.0;
+
+            normalData.push(normal);
+            normalData.push(normal);
+            normalData.push(normal);
+
+            vertexPositionData.push(a);
+            vertexPositionData.push(b);
+            vertexPositionData.push(c);
+        }
+
+        function divideTriangle(a, b, c, count) {
+            if (count > 0) {
+                var ab = mix(a, b, 0.5);
+                var ac = mix(a, c, 0.5);
+                var bc = mix(b, c, 0.5);
+
+                ab = normalize(ab, true);
+                ac = normalize(ac, true);
+                bc = normalize(bc, true);
+
+                divideTriangle(a, ab, ac, count - 1);
+                divideTriangle(ab, b, bc, count - 1);
+                divideTriangle(bc, c, ac, count - 1);
+                divideTriangle(ab, bc, ac, count - 1);
+            } else {
+                triangle(a, b, c);
+            }
+        }
+
+        function tetrahedron(a, b, c, d, n) {
+            divideTriangle(a, b, c, n);
+            divideTriangle(d, c, b, n);
+            divideTriangle(a, d, b, n);
+            divideTriangle(a, c, d, n);
+        }
+
+        tetrahedron(va, vb, vc, vd, nSubdivisions);
+        return { vertices: vertexPositionData, indices: [], normals: normalData };
+    };
+
+    var object = build(5);
+    return {
+        create: function create(_ref) {
+            var id = _ref.id;
+
+            return ObjectCreator.create({
+                id: id,
+                name: 'Sphere',
+                vertices: object.vertices,
+                normals: object.normals,
+                flatIndices: new Uint16Array(object.indices),
+                material: {
+                    ambientColor: vec4(1.0, 0.0, 1.0, 1.0),
+                    diffuseColor: vec4(1.0, 0.8, 0.0, 1.0),
+                    specularColor: vec4(1.0, 0.8, 0.0, 1.0),
+                    shininess: 200.0
+                }
+            });
+        }
+    };
+})();
+
+var SphereLatLongTriangles = (function () {
     var build = function build(radius, latitudeBands, longitudeBands) {
         var vertexPositionData = [],
             indexData = [],
@@ -4341,6 +4500,91 @@ var Sphere = (function () {
 
             for (var _longNumber = 0; _longNumber <= longitudeBands; _longNumber++) {
                 var phi = _longNumber * 2 * Math.PI / longitudeBands;
+                var sinPhi = Math.sin(phi);
+                var cosPhi = Math.cos(phi);
+
+                var x = cosPhi * sinTheta;
+                var y = cosTheta;
+                var z = sinPhi * sinTheta;
+
+                vertexPositionData.push(vec3(radius * x, radius * y, radius * z));
+            }
+        }
+
+        var vdata = [];
+        for (var latNumber = 0; latNumber < latitudeBands; latNumber++) {
+            for (var longNumber = 0; longNumber < longitudeBands; longNumber++) {
+                var first = latNumber * (longitudeBands + 1) + longNumber;
+                var second = first + longitudeBands + 1;
+
+                var a = vertexPositionData[first];
+                var b = vertexPositionData[second];
+                var c = vertexPositionData[first + 1];
+                var d = vertexPositionData[second + 1];
+
+                vdata.push(a);
+                vdata.push(b);
+                vdata.push(c);
+
+                vdata.push(b);
+                vdata.push(d);
+                vdata.push(c);
+
+                var t1 = subtract(b, a);
+                var t2 = subtract(c, a);
+                var normal = normalize(cross(t2, t1));
+                normal = vec4(normal);
+                normal[3] = 0.0;
+
+                normalData.push(a, b, c);
+
+                t1 = subtract(b, c);
+                t2 = subtract(d, b);
+                normal = normalize(cross(t2, t1));
+                normal = vec4(normal);
+                normal[3] = 0.0;
+
+                normalData.push(b, d, c);
+            }
+        }
+
+        return { vertices: vdata, indices: [], normals: normalData };
+    };
+
+    var object = build(1.0, 64, 64);
+    return {
+        create: function create(_ref2) {
+            var id = _ref2.id;
+
+            return ObjectCreator.create({
+                id: id,
+                name: 'Sphere',
+                vertices: object.vertices,
+                normals: object.normals,
+                flatIndices: new Uint16Array(object.indices),
+                material: {
+                    ambientColor: vec4(1.0, 0.0, 1.0, 1.0),
+                    diffuseColor: vec4(1.0, 0.8, 0.0, 1.0),
+                    specularColor: vec4(1.0, 0.8, 0.0, 1.0),
+                    shininess: 20.0
+                }
+            });
+        }
+    };
+})();
+
+var SphereLatLongIndexes = (function () {
+    var build = function build(radius, latitudeBands, longitudeBands) {
+        var vertexPositionData = [],
+            indexData = [],
+            normalData = [];
+        for (var _latNumber2 = 0; _latNumber2 <= latitudeBands; _latNumber2++) {
+            var theta = _latNumber2 * Math.PI / latitudeBands;
+            var sinTheta = Math.sin(theta);
+            var cosTheta = Math.cos(theta);
+
+            for (var _longNumber2 = 0; _longNumber2 <= longitudeBands; _longNumber2++) {
+                var phi = _longNumber2 * 2 * Math.PI / longitudeBands;
                 var sinPhi = Math.sin(phi);
                 var cosPhi = Math.cos(phi);
 
@@ -4369,22 +4613,154 @@ var Sphere = (function () {
         return { vertices: vertexPositionData, indices: indexData, normals: normalData };
     };
 
-    var object = build(1.0, 32, 32);
+    var object = build(1.0, 64, 64);
     return {
-        create: function create(_ref) {
-            var id = _ref.id;
+        create: function create(_ref3) {
+            var id = _ref3.id;
 
             return ObjectCreator.create({
                 id: id,
                 name: 'Sphere',
                 vertices: object.vertices,
+                normals: object.normals,
                 flatIndices: new Uint16Array(object.indices),
-                flatNormals: flatten(object.normals),
                 material: {
                     ambientColor: vec4(1.0, 0.0, 1.0, 1.0),
                     diffuseColor: vec4(1.0, 0.8, 0.0, 1.0),
                     specularColor: vec4(1.0, 0.8, 0.0, 1.0),
                     shininess: 100.0
+                }
+            });
+        }
+    };
+})();
+
+// let Sphere = SphereTetrahedronSub;
+var Sphere = SphereLatLongTriangles;
+// let Sphere = SphereLatLongIndexes;
+// let start = 0;
+//
+// start = window.performance.now();
+// let s1 = SphereTetrahedronSub.create({id: 0});
+// let t1 = window.performance.now() - start;
+//
+// start = window.performance.now();
+// let s2 = SphereLatLongTriangles.create({id: 0});
+// let t2 = window.performance.now() - start;
+//
+// start = window.performance.now();
+// let s3 = SphereLatLongIndexes.create({id: 0});
+// let t3 = window.performance.now() - start;
+//
+// console.log('SphereTetrahedronSub', s1.vertexCount, t1);
+// console.log('SphereLatLongTriangles', s2.vertexCount, t2);
+// console.log('SphereLatLongIndexes', s3.vertexCount, t3);
+"use strict";
+
+var Light = (function () {
+    return {
+        create: function create(_ref) {
+            var id = _ref.id;
+            var position = _ref.position;
+            var ambientColor = _ref.ambientColor;
+            var specularColor = _ref.specularColor;
+            var diffuseColor = _ref.diffuseColor;
+
+            return Object.defineProperties({
+                toString: function toString() {
+                    return "Light [" + id + "]";
+                },
+
+                translate: function translate(_ref2) {
+                    var x = _ref2.x;
+                    var y = _ref2.y;
+                    var z = _ref2.z;
+
+                    if (x) position[Axis.X] = x;
+                    if (y) position[Axis.Y] = y;
+                    if (z) position[Axis.Z] = z;
+                },
+                scale: function scale() {},
+                rotate: function rotate() {},
+
+                "delete": function _delete() {},
+                draw: function draw() {}
+
+            }, {
+                id: {
+                    get: function get() {
+                        return id;
+                    },
+                    configurable: true,
+                    enumerable: true
+                },
+                position: {
+                    get: function get() {
+                        return position;
+                    },
+                    set: function set(newPosition) {
+                        position = newPosition;
+                    },
+                    configurable: true,
+                    enumerable: true
+                },
+                ambientColor: {
+                    get: function get() {
+                        return ambientColor;
+                    },
+                    set: function set(newAmbientColor) {
+                        ambientColor = newAmbientColor;
+                    },
+                    configurable: true,
+                    enumerable: true
+                },
+                specularColor: {
+                    get: function get() {
+                        return specularColor;
+                    },
+                    set: function set(newSpecularColor) {
+                        specularColor = newSpecularColor;
+                    },
+                    configurable: true,
+                    enumerable: true
+                },
+                diffuseColor: {
+                    get: function get() {
+                        return diffuseColor;
+                    },
+                    set: function set(newDiffuseColor) {
+                        diffuseColor = newDiffuseColor;
+                    },
+                    configurable: true,
+                    enumerable: true
+                },
+                translateValues: {
+                    get: function get() {
+                        return position;
+                    },
+                    configurable: true,
+                    enumerable: true
+                },
+                scaleValues: {
+                    get: function get() {
+                        return [0, 0, 0];
+                    },
+                    configurable: true,
+                    enumerable: true
+                },
+                rotateValues: {
+                    get: function get() {
+                        return [0, 0, 0];
+                    },
+                    configurable: true,
+                    enumerable: true
+                },
+                isLight: {
+                    get: function get() {
+                        return true;
+                    },
+                    configurable: true,
+                    enumerable: true
                 }
             });
         }
@@ -4399,6 +4775,15 @@ var dom_helper = (function () {
         },
         getDocumentHeight: function getDocumentHeight() {
             return Math.max(document.body.scrollHeight, document.documentElement.scrollHeight, document.body.offsetHeight, document.documentElement.offsetHeight, document.body.clientHeight, document.documentElement.clientHeight);
+        },
+        getFloatArray: function getFloatArray() {
+            for (var _len = arguments.length, elemsId = Array(_len), _key = 0; _key < _len; _key++) {
+                elemsId[_key] = arguments[_key];
+            }
+
+            return elemsId.map(function (index, elem) {
+                return parseFloat(document.getElementById(index).value);
+            });
         },
         querySelected: function querySelected(name) {
             var nodeList = document.getElementsByName(name);
@@ -4574,12 +4959,13 @@ var mouse_events = (function () {
 })();
 "use strict";
 
+var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; })();
+
 var drawing = (function () {
     var gl = undefined;
     var canvas = undefined;
-    var program = undefined;
-
-    var objects = new Set();
+    var programsAvailable = undefined,
+        program = undefined;
 
     var cam = {
         radius: 10.0,
@@ -4596,12 +4982,8 @@ var drawing = (function () {
         projectionMatrixLoc = undefined;
 
     var bufferInfo = {};
-    bufferInfo.light = {
-        position: vec4(1.0, 1.0, 1.0, 0.0),
-        ambientColor: vec4(0.2, 0.2, 0.2, 1.0),
-        diffuseColor: vec4(1.0, 1.0, 1.0, 1.0),
-        specularColor: vec4(1.0, 1.0, 1.0, 1.0)
-    };
+    var worldRotation = vec3(0, 0, 0);
+    var lightRotation = 0; //only on Y axis
 
     return Object.defineProperties({
         zoom: function zoom() {
@@ -4611,12 +4993,15 @@ var drawing = (function () {
             cam.radius = Math.min(Math.max(4.0, cam.radius + amount), 50);
             return cam.radius;
         },
-        setCamOrientation: function setCamOrientation(theta, phi) {
-            cam.theta = theta;
-            cam.phi = phi;
+        setCamOrientation: function setCamOrientation(_ref) {
+            var theta = _ref.theta;
+            var phi = _ref.phi;
+
+            if (theta) cam.theta = theta;
+            if (phi) cam.phi = phi;
         },
 
-        init: function init(canvasName) {
+        init: function init(canvasName, programs) {
             canvas = document.getElementById(canvasName);
 
             gl = WebGLUtils.setupWebGL(canvas);
@@ -4624,54 +5009,18 @@ var drawing = (function () {
                 alert("WebGL isn't available");
             }
 
-            this.setDefaults(gl);
+            this.setDefaults(gl, programs);
             return canvas;
         },
-        setDefaults: function setDefaults(gl) {
+        setDefaults: function setDefaults(gl, programs) {
             gl.canvas.width = dom_helper.getDocumentWidth();
             gl.canvas.height = dom_helper.getDocumentHeight();
 
             gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-            // gl.clearColor(1.0, 1.0, 1.0, 1.0);
             gl.clearColor(0, 0, 0, 1.0);
 
-            program = initShaders(gl, "vertex-shader", "fragment-shader");
-        },
-        exportJson: function exportJson() {
-            var output = [];
-            var _iteratorNormalCompletion = true;
-            var _didIteratorError = false;
-            var _iteratorError = undefined;
-
-            try {
-                for (var _iterator = objects[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-                    var elem = _step.value;
-
-                    output.push(elem);
-                }
-            } catch (err) {
-                _didIteratorError = true;
-                _iteratorError = err;
-            } finally {
-                try {
-                    if (!_iteratorNormalCompletion && _iterator["return"]) {
-                        _iterator["return"]();
-                    }
-                } finally {
-                    if (_didIteratorError) {
-                        throw _iteratorError;
-                    }
-                }
-            }
-
-            return JSON.stringify(output, null, 2);
-        },
-        append: function append(object) {
-            objects.add(object);
-        },
-        remove: function remove(object) {
-            objects["delete"](object);
-            object["delete"](gl);
+            programsAvailable = ShaderUtil.createPrograms(gl, programs);
+            program = programsAvailable[0];
         },
         render: function render() {
             gl.useProgram(program);
@@ -4690,36 +5039,56 @@ var drawing = (function () {
             bufferInfo.ambientProductLoc = gl.getUniformLocation(program, "ambientProduct");
             bufferInfo.diffuseProductLoc = gl.getUniformLocation(program, "diffuseProduct");
             bufferInfo.specularProductLoc = gl.getUniformLocation(program, "specularProduct");
-            bufferInfo.lightPositionLoc = gl.getUniformLocation(program, "lightPosition");
             bufferInfo.shininessLoc = gl.getUniformLocation(program, "shininess");
+
+            gl.uniform3fv(gl.getUniformLocation(program, "worldRotation"), flatten(worldRotation));
 
             modelViewMatrixLoc = gl.getUniformLocation(program, 'modelViewMatrix');
             projectionMatrixLoc = gl.getUniformLocation(program, 'projectionMatrix');
 
+            lightRotation = document.querySelector('#lightsMovingBtn.active') == null ? 0.0 : lightRotation + 2.0;
             gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
             gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix));
 
-            var _iteratorNormalCompletion2 = true;
-            var _didIteratorError2 = false;
-            var _iteratorError2 = undefined;
+            var floatLights = new Float32Array(ObjectManager.lights.size * 4);
+            var numberOfLights = 0;
+            ObjectManager.lights.forEach(function (light) {
+                floatLights[numberOfLights * 4 + 0] = light.position[0] * Math.sin(radians(lightRotation));
+                floatLights[numberOfLights * 4 + 1] = light.position[1];
+                floatLights[numberOfLights * 4 + 2] = light.position[2] * Math.cos(radians(lightRotation));
+                floatLights[numberOfLights * 4 + 3] = light.position[3];
+
+                numberOfLights++;
+            });
+            if (numberOfLights === 0) {
+                floatLights = new Float32Array([0, 0, 0, 0]);
+            }
+            gl.uniform4fv(gl.getUniformLocation(program, 'lightsPositions'), floatLights);
+            bufferInfo.lights = ObjectManager.lights;
+
+            var _iteratorNormalCompletion = true;
+            var _didIteratorError = false;
+            var _iteratorError = undefined;
 
             try {
-                for (var _iterator2 = objects[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-                    var object = _step2.value;
+                for (var _iterator = ObjectManager.collection[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                    var _step$value = _slicedToArray(_step.value, 2);
+
+                    var object = _step$value[1];
 
                     object.draw(gl, bufferInfo);
                 }
             } catch (err) {
-                _didIteratorError2 = true;
-                _iteratorError2 = err;
+                _didIteratorError = true;
+                _iteratorError = err;
             } finally {
                 try {
-                    if (!_iteratorNormalCompletion2 && _iterator2["return"]) {
-                        _iterator2["return"]();
+                    if (!_iteratorNormalCompletion && _iterator["return"]) {
+                        _iterator["return"]();
                     }
                 } finally {
-                    if (_didIteratorError2) {
-                        throw _iteratorError2;
+                    if (_didIteratorError) {
+                        throw _iteratorError;
                     }
                 }
             }
@@ -4727,6 +5096,15 @@ var drawing = (function () {
             requestAnimFrame(drawing.render);
         }
     }, {
+        program: {
+            set: function set(id) {
+                if (id >= 0 && id < programsAvailable.length) {
+                    program = programsAvailable[id];
+                }
+            },
+            configurable: true,
+            enumerable: true
+        },
         eyeDistance: {
             set: function set(distance) {
                 cam.radius = cam.radius = Math.min(Math.max(4.0, distance), 50);
@@ -4739,7 +5117,6 @@ var drawing = (function () {
 "use strict";
 
 var application = (function () {
-    var canvas = drawing.init("gl-canvas");
     var transformX = document.getElementById('transformX');
     var transformY = document.getElementById('transformY');
     var transformZ = document.getElementById('transformZ');
@@ -4749,17 +5126,20 @@ var application = (function () {
     document.getElementById('zoomCtrl').addEventListener('input', function (evt) {
         return drawing.eyeDistance = 50 - evt.target.value;
     });
-    document.getElementById('jsonBtn').addEventListener('click', function (evt) {
-        var dom = document.getElementById('json-output');
-        dom.innerHTML = '';
-        dom.appendChild(document.createTextNode(drawing.exportJson()));
+    document.getElementById('thetaCtrl').addEventListener('input', function (evt) {
+        return drawing.setCamOrientation({ theta: evt.target.value });
+    });
+    document.getElementById('phiCtrl').addEventListener('input', function (evt) {
+        return drawing.setCamOrientation({ phi: evt.target.value });
     });
 
     return {
         updateTransformValues: function updateTransformValues(selectedId, domElem) {
             var object = ObjectManager.find(selectedId);
             if (object) {
-                var values = null;
+                var values = null,
+                    min = -5,
+                    max = 5;
                 var transformation = domElem.value;
                 if (transformation === 'translate') {
                     values = object.translateValues;
@@ -4767,15 +5147,55 @@ var application = (function () {
                     values = object.scaleValues;
                 } else if (transformation === 'rotate') {
                     values = object.rotateValues;
+                    min = 0;max = 360;
+                }
+                var _iteratorNormalCompletion = true;
+                var _didIteratorError = false;
+                var _iteratorError = undefined;
+
+                try {
+                    for (var _iterator = document.querySelectorAll('.transformer')[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+                        var elem = _step.value;
+
+                        elem.min = object.isLight === true ? -25.0 : min;
+                        elem.max = object.isLight === true ? 25.0 : max;
+                    }
+                } catch (err) {
+                    _didIteratorError = true;
+                    _iteratorError = err;
+                } finally {
+                    try {
+                        if (!_iteratorNormalCompletion && _iterator['return']) {
+                            _iterator['return']();
+                        }
+                    } finally {
+                        if (_didIteratorError) {
+                            throw _iteratorError;
+                        }
+                    }
                 }
 
+                var acolor = object.ambientColor.slice(0, 3).map(function (elem) {
+                    return parseInt(elem * 255);
+                });
+                var dcolor = object.diffuseColor.slice(0, 3).map(function (elem) {
+                    return parseInt(elem * 255);
+                });
+                var scolor = object.specularColor.slice(0, 3).map(function (elem) {
+                    return parseInt(elem * 255);
+                });
+
+                document.getElementById('propertiesLabel').innerHTML = object + ' - Properties';
+                document.getElementById('ambientColorBtn').style.backgroundColor = 'rgb(' + acolor.join(',') + ')';
+                document.getElementById('diffuseColorBtn').style.backgroundColor = 'rgb(' + dcolor.join(',') + ')';
+                document.getElementById('specularColorBtn').style.backgroundColor = 'rgb(' + scolor.join(',') + ')';
                 transformX.value = values[Axis.X];
                 transformY.value = values[Axis.Y];
                 transformZ.value = values[Axis.Z];
             }
         },
-        main: function main() {
-            mouse_events.install(canvas);
+        main: function main(canvasId, shaders) {
+            var canvas = drawing.init(canvasId, shaders);
 
             var installList = function installList(evt) {
                 if (evt.target.tagName !== 'LI') return;
@@ -4832,19 +5252,18 @@ var application = (function () {
                 return transform(parseFloat(evt.target.value), 2);
             });
 
-            var _iteratorNormalCompletion = true;
-            var _didIteratorError = false;
-            var _iteratorError = undefined;
+            var _iteratorNormalCompletion2 = true;
+            var _didIteratorError2 = false;
+            var _iteratorError2 = undefined;
 
             try {
-                for (var _iterator = document.querySelectorAll('.add-object-btn')[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-                    var btn = _step.value;
+                for (var _iterator2 = document.querySelectorAll('.add-object-btn')[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                    var btn = _step2.value;
 
                     btn.addEventListener('click', function (evt) {
                         var what = evt.target.getAttribute('data-value');
                         var object = ObjectManager.buildObject(what);
 
-                        drawing.append(object);
                         dom_helper.clearSelection(objectsList.children);
 
                         dom_helper.setActive(object.dom);
@@ -4855,28 +5274,35 @@ var application = (function () {
 
                 //temp
             } catch (err) {
-                _didIteratorError = true;
-                _iteratorError = err;
+                _didIteratorError2 = true;
+                _iteratorError2 = err;
             } finally {
                 try {
-                    if (!_iteratorNormalCompletion && _iterator["return"]) {
-                        _iterator["return"]();
+                    if (!_iteratorNormalCompletion2 && _iterator2['return']) {
+                        _iterator2['return']();
                     }
                 } finally {
-                    if (_didIteratorError) {
-                        throw _iteratorError;
+                    if (_didIteratorError2) {
+                        throw _iteratorError2;
                     }
                 }
             }
 
             var object = ObjectManager.buildObject('sphere');
-            object.translate({ x: 2.0 });
-            drawing.append(object);
+            object.translate({ x: 3.0 });
             object = ObjectManager.buildObject('sphere');
-            object.translate({ x: -2 });
-            object.rotate({ angle: 30, axis: Axis.X });
-            drawing.append(object);
-            dom_helper.setActive(object.dom);
+            object.translate({ x: -3.0 });
+            object = ObjectManager.buildObject('cylinder');
+            object.translate({ y: -2.0 });
+            object = ObjectManager.buildObject('cylinder');
+            object.translate({ y: 2.0 });
+            object.rotate({ angle: 60, axis: Axis.X });
+            object = ObjectManager.buildObject('cone');
+            ObjectManager.buildObject('light', { position: [-10, 10, -10, 0.0] });
+            ObjectManager.buildObject('light', { position: [10, 10, -10, 0.0] });
+            ObjectManager.buildObject('light', { position: [-10, -10, -10, 0.0] });
+            ObjectManager.buildObject('light', { position: [10, -10, -10, 0.0] });
+            // dom_helper.setActive(object.dom);
             //------------------------------------------------
 
             drawing.render();
@@ -4884,4 +5310,48 @@ var application = (function () {
     };
 })();
 
-window.addEventListener('load', application.main);
+window.addEventListener('load', function () {
+    var programs = [];
+    var count = 0;
+
+    programs.push({
+        vertexShader: {
+            source: 'shaders/fragment_lighting.vs.glsl?', type: WebGLRenderingContext.VERTEX_SHADER, content: 0
+        },
+        fragmentShader: {
+            source: 'shaders/fragment_lighting.fs.glsl?', type: WebGLRenderingContext.FRAGMENT_SHADER, content: 0
+        }
+    });
+    programs.push({
+        vertexShader: {
+            source: 'shaders/vertex_lighting.vs.glsl?', type: WebGLRenderingContext.VERTEX_SHADER, content: 0
+        },
+        fragmentShader: {
+            source: 'shaders/vertex_lighting.fs.glsl?', type: WebGLRenderingContext.FRAGMENT_SHADER, content: 0
+        }
+    });
+
+    var loadAjaxContent = function loadAjaxContent(shader) {
+        var request = new XMLHttpRequest();
+        request.onload = function () {
+            shader.content = request.responseText;
+            if ((shader.source, ++count >= programs.length * 2)) {
+                application.main('gl-canvas', programs);
+            }
+        };
+
+        // setTimeout(() => {
+        request.open("get", shader.source, true);
+        request.send();
+        // }, i * 5000);
+    };
+
+    for (var i = 0; i < programs.length; i++) {
+        var program = programs[i];
+        var vs = program.vertexShader;
+        var fs = program.fragmentShader;
+
+        loadAjaxContent(vs);
+        loadAjaxContent(fs);
+    }
+});

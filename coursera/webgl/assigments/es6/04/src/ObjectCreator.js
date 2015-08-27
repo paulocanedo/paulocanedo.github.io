@@ -22,6 +22,9 @@ let ObjectCreator = (() => {
                 get translateValues() { return [translateMatrix[0][3], translateMatrix[1][3], translateMatrix[2][3]]; },
                 get scaleValues() { return [scaleMatrix[0][0], scaleMatrix[1][1], scaleMatrix[2][2]]; },
                 get rotateValues() { return _rotateValues; },
+                get ambientColor() { return material.ambientColor; },
+                get specularColor() { return material.specularColor; },
+                get diffuseColor() { return material.diffuseColor; },
 
                 translate({x, y, z}) {
                     if(x !== undefined) translateMatrix[0][3] = x;
@@ -91,13 +94,26 @@ let ObjectCreator = (() => {
                 },
 
                 draw(gl, bufferInfo) {
-                    let {vPosition, vNormal, light,
+                    let {vPosition, vNormal, lights,
                          ambientProductLoc, diffuseProductLoc, specularProductLoc,
                          shininessLoc} = bufferInfo;
 
-                    let ambientProduct = mult(light.ambientColor, material.ambientColor);
-                    let diffuseProduct = mult(light.diffuseColor, material.diffuseColor);
-                    let specularProduct = mult(light.specularColor, material.specularColor);
+                    let lightAmbientColor  = vec4();
+                    let lightDiffuseColor  = vec4();
+                    let lightSpecularColor = vec4();
+                    lights.forEach(light => {
+                        for(let i=0; i<light.ambientColor.length; i++) {
+                            lightAmbientColor[i] += light.ambientColor[i] / 2.0;
+                            lightDiffuseColor[i] += light.diffuseColor[i] / 2.0;
+                            lightSpecularColor[i] += light.specularColor[i] / 2.0;
+                        }
+                    });
+
+                    let ambientProduct = mult((lights.size === 0) ? vec4(0.1, 0.1, 0.1, 1.0) : lightAmbientColor,
+                                              material.ambientColor);
+
+                    let diffuseProduct = mult(lightDiffuseColor, material.diffuseColor);
+                    let specularProduct = mult(lightSpecularColor, material.specularColor);
 
                     this.initBuffers(gl);
                     this.flush(gl);
@@ -115,7 +131,11 @@ let ObjectCreator = (() => {
                     gl.uniform4fv(specularProductLoc, flatten(specularProduct));
                     gl.uniform1f(shininessLoc, material.shininess);
 
-                    gl.drawElements(gl.TRIANGLES, flatIndices.length, gl.UNSIGNED_SHORT, 0);
+                    if(flatIndices.length > 0) {
+                        gl.drawElements(gl.TRIANGLES, flatIndices.length, gl.UNSIGNED_SHORT, 0);
+                    } else {
+                        gl.drawArrays(gl.TRIANGLES, 0, flatVertices.length/3);
+                    }
                 },
 
                 delete(gl) {
@@ -133,6 +153,10 @@ let ObjectCreator = (() => {
                         gl.deleteBuffer(buffers.indiceId);
                         gl.deleteBuffer(buffers.verticeId);
                     }
+                },
+
+                get vertexCount() {
+                    return flatVertices.length / 3;
                 },
 
                 toJSON() {

@@ -5,6 +5,14 @@
     z-index: -1;
 }
 
+.btn-color-picker {
+    width: 120px;
+    height: 20px;
+    background-color: white;
+    border: 1px solid gray;
+    float: right;
+}
+
 .debug-log {
     position: absolute;
     bottom: 200px;
