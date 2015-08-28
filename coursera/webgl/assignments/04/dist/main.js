@@ -4957,9 +4957,9 @@ var mouse_events = (function () {
         }
     };
 })();
-"use strict";
+'use strict';
 
-var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; })();
+var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i['return']) _i['return'](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError('Invalid attempt to destructure non-iterable instance'); } }; })();
 
 var drawing = (function () {
     var gl = undefined;
@@ -5013,8 +5013,9 @@ var drawing = (function () {
             return canvas;
         },
         setDefaults: function setDefaults(gl, programs) {
-            gl.canvas.width = dom_helper.getDocumentWidth();
-            gl.canvas.height = dom_helper.getDocumentHeight();
+            var devicePixelRatio = window.devicePixelRatio || 1;
+            gl.canvas.width = dom_helper.getDocumentWidth() * devicePixelRatio;
+            gl.canvas.height = dom_helper.getDocumentHeight() * devicePixelRatio;
 
             gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
             gl.clearColor(0, 0, 0, 1.0);
@@ -5022,7 +5023,25 @@ var drawing = (function () {
             programsAvailable = ShaderUtil.createPrograms(gl, programs);
             program = programsAvailable[0];
         },
+        defineOptions: function defineOptions() {
+            lightRotation = document.querySelector('#lightsMovingBtn.active') == null ? 0.0 : lightRotation + 2.0;
+            if (document.getElementById('perFragOption').className.indexOf('active') >= 0) {
+                program = programsAvailable[0];
+            } else {
+                program = programsAvailable[1];
+            }
+
+            var lightTypeValue = 0;
+            if (document.getElementById('indeterminateLightOption').className.indexOf('active') >= 0) {
+                lightTypeValue = 1;
+            }
+            ObjectManager.lights.forEach(function (light) {
+                return light.position[3] = lightTypeValue;
+            });
+        },
         render: function render() {
+            drawing.defineOptions();
+
             gl.useProgram(program);
             gl.enable(gl.DEPTH_TEST);
             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -5046,7 +5065,6 @@ var drawing = (function () {
             modelViewMatrixLoc = gl.getUniformLocation(program, 'modelViewMatrix');
             projectionMatrixLoc = gl.getUniformLocation(program, 'projectionMatrix');
 
-            lightRotation = document.querySelector('#lightsMovingBtn.active') == null ? 0.0 : lightRotation + 2.0;
             gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
             gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix));
 
@@ -5083,8 +5101,8 @@ var drawing = (function () {
                 _iteratorError = err;
             } finally {
                 try {
-                    if (!_iteratorNormalCompletion && _iterator["return"]) {
-                        _iterator["return"]();
+                    if (!_iteratorNormalCompletion && _iterator['return']) {
+                        _iterator['return']();
                     }
                 } finally {
                     if (_didIteratorError) {
@@ -5192,6 +5210,14 @@ var application = (function () {
                 transformX.value = values[Axis.X];
                 transformY.value = values[Axis.Y];
                 transformZ.value = values[Axis.Z];
+
+                if (object.isLight) {
+                    $('#scaleTransform').addClass('disabled');
+                    $('#rotateTransform').addClass('disabled');
+                } else {
+                    $('#scaleTransform').removeClass('disabled');
+                    $('#rotateTransform').removeClass('disabled');
+                }
             }
         },
         main: function main(canvasId, shaders) {
@@ -5210,15 +5236,35 @@ var application = (function () {
                 return application.updateTransformValues(evt.target.getAttribute('data-id'), dom_helper.querySelected('transformation'));
             });
 
-            document.getElementById('translateTransform').addEventListener('click', function (evt) {
-                return application.updateTransformValues(dom_helper.getSelectedFromList(objectsList.children, 'id'), evt.target.children[0]);
-            });
-            document.getElementById('scaleTransform').addEventListener('click', function (evt) {
-                return application.updateTransformValues(dom_helper.getSelectedFromList(objectsList.children, 'id'), evt.target.children[0]);
-            });
-            document.getElementById('rotateTransform').addEventListener('click', function (evt) {
-                return application.updateTransformValues(dom_helper.getSelectedFromList(objectsList.children, 'id'), evt.target.children[0]);
-            });
+            var tbuttons = document.querySelectorAll("#translateTransform,#scaleTransform,#rotateTransform");
+            var _iteratorNormalCompletion2 = true;
+            var _didIteratorError2 = false;
+            var _iteratorError2 = undefined;
+
+            try {
+                for (var _iterator2 = tbuttons[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+                    var button = _step2.value;
+
+                    button.addEventListener('click', function (evt) {
+                        if (evt.target.className.indexOf('disabled') < 0) {
+                            application.updateTransformValues(dom_helper.getSelectedFromList(objectsList.children, 'id'), evt.target.children[0]);
+                        }
+                    });
+                }
+            } catch (err) {
+                _didIteratorError2 = true;
+                _iteratorError2 = err;
+            } finally {
+                try {
+                    if (!_iteratorNormalCompletion2 && _iterator2['return']) {
+                        _iterator2['return']();
+                    }
+                } finally {
+                    if (_didIteratorError2) {
+                        throw _iteratorError2;
+                    }
+                }
+            }
 
             var transform = function transform(value, axis) {
                 var selectedId = dom_helper.getSelectedFromList(objectsList.children, 'id');
@@ -5252,16 +5298,20 @@ var application = (function () {
                 return transform(parseFloat(evt.target.value), 2);
             });
 
-            var _iteratorNormalCompletion2 = true;
-            var _didIteratorError2 = false;
-            var _iteratorError2 = undefined;
+            var _iteratorNormalCompletion3 = true;
+            var _didIteratorError3 = false;
+            var _iteratorError3 = undefined;
 
             try {
-                for (var _iterator2 = document.querySelectorAll('.add-object-btn')[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-                    var btn = _step2.value;
+                for (var _iterator3 = document.querySelectorAll('.add-object-btn')[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+                    var btn = _step3.value;
 
                     btn.addEventListener('click', function (evt) {
                         var what = evt.target.getAttribute('data-value');
+                        if (what === 'light' && ObjectManager.lights.size >= 4) {
+                            alert('Sorry, application doesnt support more than 4 lights');
+                            return;
+                        }
                         var object = ObjectManager.buildObject(what);
 
                         dom_helper.clearSelection(objectsList.children);
@@ -5274,16 +5324,16 @@ var application = (function () {
 
                 //temp
             } catch (err) {
-                _didIteratorError2 = true;
-                _iteratorError2 = err;
+                _didIteratorError3 = true;
+                _iteratorError3 = err;
             } finally {
                 try {
-                    if (!_iteratorNormalCompletion2 && _iterator2['return']) {
-                        _iterator2['return']();
+                    if (!_iteratorNormalCompletion3 && _iterator3['return']) {
+                        _iterator3['return']();
                     }
                 } finally {
-                    if (_didIteratorError2) {
-                        throw _iteratorError2;
+                    if (_didIteratorError3) {
+                        throw _iteratorError3;
                     }
                 }
             }

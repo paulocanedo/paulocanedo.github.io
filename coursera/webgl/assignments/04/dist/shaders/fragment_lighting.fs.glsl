@@ -1,6 +1,6 @@
 precision mediump float;
 
-const int MAX_LIGHTS = 8;
+const int MAX_LIGHTS = 4;
 
 varying vec3 L[MAX_LIGHTS];
 varying vec3 N;

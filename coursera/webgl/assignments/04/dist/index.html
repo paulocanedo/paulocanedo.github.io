@@ -52,6 +52,26 @@
         data-toggle="button" aria-pressed="false" autocomplete="off" id="lightsMovingBtn">
         Lights moving
     </button>
+
+    <div class="btn-group" data-toggle="buttons">
+      <label class="btn btn-primary btn-lg active" id="perFragOption" title="">
+          <input type="radio" name="lightingType" value="perFragment" autocomplete="off" checked> per Fragment
+      </label>
+
+      <label class="btn btn-primary btn-lg" id="perVertexOption" title="">
+          <input type="radio" name="lightingType" value="perVertex" autocomplete="off"> per Vertex
+      </label>
+    </div>
+
+    <div class="btn-group" data-toggle="buttons">
+      <label class="btn btn-primary btn-lg active" id="finiteLightOption" title="">
+          <input type="radio" name="lightingDirType" value="finiteLight" autocomplete="off" checked> Finite Light
+      </label>
+
+      <label class="btn btn-primary btn-lg" id="indeterminateLightOption" title="">
+          <input type="radio" name="lightingDirType" value="indeterminateLight" autocomplete="off"> Indeterminate light
+      </label>
+    </div>
   </div>
 
 </nav>
@@ -78,15 +98,15 @@
         </div>
         <div class="panel-body">
             <div class="btn-group" data-toggle="buttons">
-              <label class="btn btn-primary active" id="translateTransform" title="Drag with ctrl key pressed to translate on X and Y">
+              <label class="btn btn-primary active" id="translateTransform" title="">
                   <input type="radio" name="transformation" value="translate" autocomplete="off" checked> Translate
               </label>
 
-              <label class="btn btn-primary" id="scaleTransform" title="Drag with shift key pressed to scale on X and Y">
+              <label class="btn btn-primary" id="scaleTransform" title="">
                   <input type="radio" name="transformation" value="scale" autocomplete="off"> Scale
               </label>
 
-              <label class="btn btn-primary" id="rotateTransform" title="Rotate with mouse not working">
+              <label class="btn btn-primary" id="rotateTransform" title="">
                   <input type="radio" name="transformation" value="rotate" autocomplete="off"> Rotate
               </label>
             </div>
@@ -103,7 +123,6 @@
               <li class="list-group-item">Specular: <button class="btn-color-picker" id="specularColorBtn"></button></li>
           <ul>
         </div>
-      </div>
 
   </div>
 </div>
