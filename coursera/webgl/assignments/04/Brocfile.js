@@ -26,7 +26,7 @@ appJs = mergeTrees([browserPolyfill, appJs]);
 appJs = concat(appJs, {
   // we specify a concatenation order
   inputFiles: [
-      'browser-polyfill.js',
+    //   'browser-polyfill.js',
       'ShaderUtil.js',
       'ObjectCreator.js',
       'ObjectManager.js',
@@ -55,4 +55,4 @@ var index = funnel('src', {files: [
 
 // Grab all our trees and
 // export them as a single and final tree
-module.exports = mergeTrees([index, appJs]);
+module.exports = mergeTrees([index, appJs, browserPolyfill]);
