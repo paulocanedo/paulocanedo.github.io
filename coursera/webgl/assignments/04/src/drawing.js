@@ -47,8 +47,9 @@ let drawing = (() => {
             return canvas;
         },
         setDefaults(gl, programs) {
-            gl.canvas.width = dom_helper.getDocumentWidth();
-            gl.canvas.height = dom_helper.getDocumentHeight();
+            let devicePixelRatio = window.devicePixelRatio || 1;
+            gl.canvas.width = dom_helper.getDocumentWidth() * devicePixelRatio;
+            gl.canvas.height = dom_helper.getDocumentHeight() * devicePixelRatio;
 
             gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
             gl.clearColor(0, 0, 0, 1.0);
