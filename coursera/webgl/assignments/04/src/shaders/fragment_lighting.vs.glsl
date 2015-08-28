@@ -1,4 +1,4 @@
-const int MAX_LIGHTS = 8;
+const int MAX_LIGHTS = 4;
 
 attribute vec4 vPosition;
 attribute vec3 vNormal;

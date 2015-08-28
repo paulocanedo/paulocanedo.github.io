@@ -41,6 +41,14 @@ let application = (() => {
                 transformX.value = values[Axis.X];
                 transformY.value = values[Axis.Y];
                 transformZ.value = values[Axis.Z];
+
+                if(object.isLight) {
+                    $('#scaleTransform').addClass('disabled');
+                    $('#rotateTransform').addClass('disabled');
+                } else {
+                    $('#scaleTransform').removeClass('disabled');
+                    $('#rotateTransform').removeClass('disabled');
+                }
             }
         },
         main(canvasId, shaders) {
@@ -58,12 +66,14 @@ let application = (() => {
             objectsList.addEventListener('click',
                 evt => application.updateTransformValues(evt.target.getAttribute('data-id'), dom_helper.querySelected('transformation')));
 
-            document.getElementById('translateTransform').addEventListener('click',
-                evt => application.updateTransformValues(dom_helper.getSelectedFromList(objectsList.children, 'id'), evt.target.children[0]));
-            document.getElementById('scaleTransform').addEventListener('click',
-                evt => application.updateTransformValues(dom_helper.getSelectedFromList(objectsList.children, 'id'), evt.target.children[0]));
-            document.getElementById('rotateTransform').addEventListener('click',
-                evt => application.updateTransformValues(dom_helper.getSelectedFromList(objectsList.children, 'id'), evt.target.children[0]));
+            let tbuttons = document.querySelectorAll("#translateTransform,#scaleTransform,#rotateTransform");
+            for(let button of tbuttons) {
+                button.addEventListener('click', evt => {
+                    if(evt.target.className.indexOf('disabled') < 0) {
+                        application.updateTransformValues(dom_helper.getSelectedFromList(objectsList.children, 'id'), evt.target.children[0]);
+                    }
+                });
+            }
 
             let transform = (value, axis) => {
                 let selectedId = dom_helper.getSelectedFromList(objectsList.children, 'id');
@@ -94,6 +104,10 @@ let application = (() => {
             for(let btn of document.querySelectorAll('.add-object-btn')) {
                 btn.addEventListener('click', evt => {
                     let what = evt.target.getAttribute('data-value');
+                    if(what === 'light' && ObjectManager.lights.size >= 4) {
+                        alert('Sorry, application doesnt support more than 4 lights');
+                        return;
+                    }
                     let object = ObjectManager.buildObject(what);
 
                     dom_helper.clearSelection(objectsList.children);
