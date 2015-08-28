@@ -57,7 +57,23 @@ let drawing = (() => {
             programsAvailable = ShaderUtil.createPrograms(gl, programs);
             program = programsAvailable[0];
         },
+        defineOptions() {
+            lightRotation = document.querySelector('#lightsMovingBtn.active') == null ? 0.0 : lightRotation + 2.0;
+            if(document.getElementById('perFragOption').className.indexOf('active') >= 0) {
+                program = programsAvailable[0];
+            } else {
+                program = programsAvailable[1];
+            }
+
+            let lightTypeValue = 0;
+            if(document.getElementById('indeterminateLightOption').className.indexOf('active') >= 0) {
+                lightTypeValue = 1;
+            }
+            ObjectManager.lights.forEach(light => light.position[3] = lightTypeValue);
+        },
         render() {
+            drawing.defineOptions();
+
             gl.useProgram( program );
             gl.enable(gl.DEPTH_TEST);
             gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
@@ -84,7 +100,6 @@ let drawing = (() => {
             modelViewMatrixLoc = gl.getUniformLocation(program, 'modelViewMatrix');
             projectionMatrixLoc = gl.getUniformLocation(program, 'projectionMatrix');
 
-            lightRotation = document.querySelector('#lightsMovingBtn.active') == null ? 0.0 : lightRotation + 2.0;
             gl.uniformMatrix4fv(modelViewMatrixLoc, false, flatten(modelViewMatrix));
             gl.uniformMatrix4fv(projectionMatrixLoc, false, flatten(projectionMatrix));
 
