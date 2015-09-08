@@ -1,0 +1,70 @@
+#gl-canvas {
+    position: absolute;
+    top: 0;
+    left:  0;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
+}
+
+.btn-color-picker {
+    width: 120px;
+    height: 20px;
+    background-color: white;
+    border: 1px solid gray;
+    float: right;
+}
+
+.debug-log {
+    position: absolute;
+    bottom: 200px;
+    left: 1em;
+    min-width: 200px;
+    max-height: 90%;
+    overflow-y: auto;
+    border: solid 1px white;
+    padding: 6px;
+    color: white;
+}
+
+.float-form, .float-form-p1 {
+    position: absolute;
+    top: 70px;
+    left: 1em;
+    min-width: 200px;
+    max-height: 90%;
+    overflow-y: auto;
+}
+
+.float-form-p2 {
+    left: auto;
+    right: 1em;
+}
+
+.float-form-p3 {
+    left: auto;
+    right: 1em;
+    top: 360px;
+}
+
+.no-selectable {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.default-cursor {
+    cursor: default;
+}
+
+.delete-button:hover {
+    background-color: black;
+}
+
+.list-group-item.active > .delete-button:hover {
+    background-color: black;
+    color: white;
+}
