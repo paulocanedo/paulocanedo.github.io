@@ -1,6 +1,6 @@
 let ObjectCreator = (() => {
     return {
-        create({id, vertices, flatIndices, normals, material, name}) {
+        create({id, vertices, flatIndices, flatTexCoords, normals, material, name}) {
             // its required store non flat vertices to compute transformations
 
             let translateMatrix  = translate(0, 0, 0);
@@ -65,6 +65,7 @@ let ObjectCreator = (() => {
                         buffers.normalId   = gl.createBuffer();
                         buffers.indiceId   = gl.createBuffer();
                         buffers.verticeId  = gl.createBuffer();
+                        buffers.textureId  = gl.createBuffer();
 
                         this.firstFlush(gl);
                         buffers.initialized = true;
@@ -80,6 +81,9 @@ let ObjectCreator = (() => {
 
                     gl.bindBuffer(gl.ARRAY_BUFFER, buffers.normalId);
                     gl.bufferData(gl.ARRAY_BUFFER, flatNormals, gl.DYNAMIC_DRAW);
+
+                    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.textureId);
+                    gl.bufferData(gl.ARRAY_BUFFER, flatTexCoords, gl.DYNAMIC_DRAW);
                 },
 
                 flush(gl) {
@@ -91,12 +95,15 @@ let ObjectCreator = (() => {
 
                     gl.bindBuffer(gl.ARRAY_BUFFER, buffers.normalId);
                     gl.bufferSubData(gl.ARRAY_BUFFER, 0, flatNormals);
+
+                    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.textureId);
+                    gl.bufferSubData(gl.ARRAY_BUFFER, 0, flatTexCoords);
                 },
 
                 draw(gl, bufferInfo) {
-                    let {vPosition, vNormal, lights,
+                    let {vPosition, vNormal, vTexCoord, lights,
                          ambientProductLoc, diffuseProductLoc, specularProductLoc,
-                         shininessLoc} = bufferInfo;
+                         textures, shininessLoc} = bufferInfo;
 
                     let lightAmbientColor  = vec4();
                     let lightDiffuseColor  = vec4();
@@ -126,6 +133,10 @@ let ObjectCreator = (() => {
                     gl.vertexAttribPointer(vNormal, 3, gl.FLOAT, false, 0, 0);
                     gl.enableVertexAttribArray(vNormal);
 
+                    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.textureId);
+                    gl.vertexAttribPointer(vTexCoord, 2, gl.FLOAT, false, 0, 0);
+                    gl.enableVertexAttribArray(vTexCoord);
+
                     gl.uniform4fv(ambientProductLoc, flatten(ambientProduct));
                     gl.uniform4fv(diffuseProductLoc, flatten(diffuseProduct));
                     gl.uniform4fv(specularProductLoc, flatten(specularProduct));
@@ -149,23 +160,14 @@ let ObjectCreator = (() => {
                         gl.bindBuffer(gl.ARRAY_BUFFER, buffers.normalId);
                         gl.bufferSubData(gl.ARRAY_BUFFER, 0, null);
 
+                        gl.bindBuffer(gl.ARRAY_BUFFER, buffers.textureId);
+                        gl.bufferSubData(gl.ARRAY_BUFFER, 0, null);
+
                         gl.deleteBuffer(buffers.normalId);
                         gl.deleteBuffer(buffers.indiceId);
                         gl.deleteBuffer(buffers.verticeId);
+                        gl.deleteBuffer(buffers.textureId);
                     }
-                },
-
-                get vertexCount() {
-                    return flatVertices.length / 3;
-                },
-
-                toJSON() {
-                    return {
-                        name: name,
-                        vertices: flatVertices,
-                        normals: flatNormals,
-                        indices: flatIndices
-                    };
                 }
             };
         },

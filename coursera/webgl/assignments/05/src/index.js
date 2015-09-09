@@ -120,11 +120,11 @@ let application = (() => {
 
             //temp
             let object = ObjectManager.buildObject('sphere');
-            object.translate({x: 3.0});
-            ObjectManager.buildObject('light', { position: [-10,  10, -10, 0.0] });
-            ObjectManager.buildObject('light', { position: [ 10,  10, -10, 0.0] });
-            ObjectManager.buildObject('light', { position: [-10, -10, -10, 0.0] });
-            ObjectManager.buildObject('light', { position: [ 10, -10, -10, 0.0] });
+            // object.translate({x: 3.0});
+            ObjectManager.buildObject('light', { position: [-50,  50, -50, 0.0] });
+            // ObjectManager.buildObject('light', { position: [ 50,  50, -50, 0.0] });
+            // ObjectManager.buildObject('light', { position: [-10, -10, -10, 0.0] });
+            // ObjectManager.buildObject('light', { position: [ 10, -10, -10, 0.0] });
             // dom_helper.setActive(object.dom);
             //------------------------------------------------
 
@@ -139,20 +139,20 @@ window.addEventListener('load', () => {
 
     programs.push({
         vertexShader: {
-            source: 'shaders/fragment_lighting.vs.glsl?', type: WebGLRenderingContext.VERTEX_SHADER, content: 0
+            source: 'shaders/fragment_lighting.vs.glsl', type: WebGLRenderingContext.VERTEX_SHADER, content: 0
         },
         fragmentShader: {
-            source: 'shaders/fragment_lighting.fs.glsl?', type: WebGLRenderingContext.FRAGMENT_SHADER, content: 0
+            source: 'shaders/fragment_lighting.fs.glsl', type: WebGLRenderingContext.FRAGMENT_SHADER, content: 0
         }
     });
-    programs.push({
-        vertexShader: {
-            source: 'shaders/vertex_lighting.vs.glsl?', type: WebGLRenderingContext.VERTEX_SHADER, content: 0
-        },
-        fragmentShader: {
-            source: 'shaders/vertex_lighting.fs.glsl?', type: WebGLRenderingContext.FRAGMENT_SHADER, content: 0
-        }
-    });
+    // programs.push({
+    //     vertexShader: {
+    //         source: 'shaders/vertex_lighting.vs.glsl', type: WebGLRenderingContext.VERTEX_SHADER, content: 0
+    //     },
+    //     fragmentShader: {
+    //         source: 'shaders/vertex_lighting.fs.glsl', type: WebGLRenderingContext.FRAGMENT_SHADER, content: 0
+    //     }
+    // });
 
     let loadAjaxContent = (shader) => {
         let request = new XMLHttpRequest();
@@ -177,4 +177,17 @@ window.addEventListener('load', () => {
         loadAjaxContent(vs);
         loadAjaxContent(fs);
     }
+
+    // navigator.getMedia = (navigator.getUserMedia || navigator.webkitGetUserMedia ||
+    //                    navigator.mozGetUserMedia || navigator.msGetUserMedia);
+    //
+    // navigator.getMedia({video: true, audio: false},
+    //     (localMediaStream) => {
+    //         let videoElem = document.getElementById('world1Texture');
+    //         videoElem.src = window.URL.createObjectURL(localMediaStream);
+    //     },
+    //     (err) => {
+    //         console.log("An error occured: " + err);
+    //     }
+    // );
 });

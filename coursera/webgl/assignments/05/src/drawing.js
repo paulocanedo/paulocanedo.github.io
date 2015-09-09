@@ -16,6 +16,7 @@ let drawing = (() => {
     let modelViewMatrixLoc, projectionMatrixLoc;
 
     let bufferInfo = {};
+    bufferInfo.textures = {};
     let worldRotation = vec3(0,0,0);
     let lightRotation = 0; //only on Y axis
 
@@ -44,7 +45,28 @@ let drawing = (() => {
             if ( !gl ) { alert( "WebGL isn't available" ); }
 
             this.setDefaults(gl, programs);
+            this.allocateTextures(gl);
             return canvas;
+        },
+        allocateTextures(gl) {
+            let createTexture = (ref) => {
+                let textureId = gl.createTexture();
+                gl.bindTexture(gl.TEXTURE_2D, textureId);
+                //----
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                //----
+                gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+                gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, ref);
+                // gl.generateMipmap(gl.TEXTURE_2D);
+                // gl.generateMipmap(gl.TEXTURE_2D);
+                // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_LINEAR);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+
+                return textureId;
+            };
+            bufferInfo.textures.world1 = createTexture(document.getElementById('world1Texture'));
         },
         setDefaults(gl, programs) {
             let devicePixelRatio = window.devicePixelRatio || 1;
@@ -57,10 +79,11 @@ let drawing = (() => {
             programsAvailable = ShaderUtil.createPrograms(gl, programs);
             program = programsAvailable[0];
         },
-        defineOptions() {
+        defineOptions(gl) {
+
         },
         render() {
-            drawing.defineOptions();
+            drawing.defineOptions(gl);
 
             gl.useProgram( program );
             gl.enable(gl.DEPTH_TEST);
@@ -78,6 +101,7 @@ let drawing = (() => {
 
             bufferInfo.vPosition = gl.getAttribLocation(program, "vPosition");
             bufferInfo.vNormal = gl.getAttribLocation(program, "vNormal");
+            bufferInfo.vTexCoord = gl.getAttribLocation(program, "vTexCoord");
             bufferInfo.ambientProductLoc = gl.getUniformLocation(program, "ambientProduct");
             bufferInfo.diffuseProductLoc = gl.getUniformLocation(program, "diffuseProduct");
             bufferInfo.specularProductLoc = gl.getUniformLocation(program, "specularProduct");

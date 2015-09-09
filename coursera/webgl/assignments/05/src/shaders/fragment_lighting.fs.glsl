@@ -2,6 +2,9 @@ precision mediump float;
 
 const int MAX_LIGHTS = 4;
 
+uniform sampler2D texture1;
+
+varying vec2 fTexCoord;
 varying vec3 L[MAX_LIGHTS];
 varying vec3 N;
 varying vec3 E;
@@ -12,7 +15,6 @@ uniform float shininess;
 
 void main()
 {
-    // Compute terms in the illumination equation
     vec4 ambient = ambientProduct;
 
     vec4 diffuse = vec4(0.0, 0.0, 0.0, 0.0);
@@ -32,7 +34,8 @@ void main()
             specular = vec4(0.0, 0.0, 0.0, 1.0);
         }
     }
-    // gl_FragColor = ambient;
-    gl_FragColor = vec4((ambient + diffuse + specular).rgb, 1.0);
+    vec4 color = texture2D(texture1, fTexCoord);
+    // gl_FragColor = vec4((ambient + diffuse + specular).rgb, 1.0);
+    gl_FragColor = color + vec4((diffuse + specular).rgb, 1.0);
 
 }
