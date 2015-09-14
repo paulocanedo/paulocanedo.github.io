@@ -96,6 +96,13 @@
               <li class="list-group-item">Ambient:  <button class="btn-color-picker" id="ambientColorBtn"></button></li>
               <li class="list-group-item">Diffuse:  <button class="btn-color-picker" id="diffuseColorBtn"></button></li>
               <li class="list-group-item">Specular: <button class="btn-color-picker" id="specularColorBtn"></button></li>
+              <li class="list-group-item">Texture:
+                  <select id="textureFromOption">
+                      <option value="world">World</option>
+                      <option value="soccerBall">Soccer ball</option>
+                      <option value="webcam">From Webcam</option>
+                  </select>
+              </li>
           <ul>
         </div>
 
@@ -116,11 +123,10 @@
   </div>
 </div>
 
-<!-- <img id="world1Texture" src="textures/SA2011_black.gif" width="512" height="256" hidden /> -->
-<!-- <video id="world1Texture" autoplay="true"> -->
-<!-- <img id="world1Texture" src="textures/tree-247122.jpg" hidden /> -->
-<img id="world1Texture" src="textures/world1.jpg" hidden />
-<!-- <img id="world2Texture" src="textures/world2.jpg" hidden /> -->
+<img id="textureElem1" src="textures/world1.jpg" hidden />
+<img id="textureElem2" src="textures/soccer_ball.jpg" hidden />
+<video id="textureElem3" autoplay="true" hidden />
+
 <div class="debug-log">
     <span id="debug"></span>
 </div>

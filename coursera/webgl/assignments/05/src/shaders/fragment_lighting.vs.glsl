@@ -32,5 +32,8 @@ void main()
     }
 
     fTexCoord = vTexCoord;
+    vec4 newNormal = vec4(2.0 * N, 0.0);
+    vec4 newpos = vPosition + newNormal;
+    // gl_Position = projectionMatrix * modelViewMatrix * newpos;
     gl_Position = projectionMatrix * modelViewMatrix * vPosition;
 }

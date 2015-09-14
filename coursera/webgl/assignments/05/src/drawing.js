@@ -1,7 +1,7 @@
 let drawing = (() => {
     let gl;
     let canvas;
-    let programsAvailable, program;
+    let programsAvailable;
 
     let cam = {
         radius: 10.0,
@@ -15,17 +15,13 @@ let drawing = (() => {
     let modelViewMatrix, projectionMatrix;
     let modelViewMatrixLoc, projectionMatrixLoc;
 
+    let selectionFB;
     let bufferInfo = {};
     bufferInfo.textures = {};
     let worldRotation = vec3(0,0,0);
     let lightRotation = 0; //only on Y axis
 
     return {
-        set program(id) {
-            if(id >= 0 && id < programsAvailable.length) {
-                program = programsAvailable[id];
-            }
-        },
         zoom(zoomIn = true) {
             let amount = zoomIn ? -1.0 : 1.0;
             cam.radius = Math.min(Math.max(4.0, cam.radius + amount), 50);
@@ -49,24 +45,21 @@ let drawing = (() => {
             return canvas;
         },
         allocateTextures(gl) {
-            let createTexture = (ref) => {
-                let textureId = gl.createTexture();
-                gl.bindTexture(gl.TEXTURE_2D, textureId);
-                //----
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-                //----
-                gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+            let loadTexture = (id, ref) => {
+                gl.bindTexture(gl.TEXTURE_2D, id);
                 gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, ref);
-                // gl.generateMipmap(gl.TEXTURE_2D);
-                // gl.generateMipmap(gl.TEXTURE_2D);
-                // gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_LINEAR);
+
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-
-                return textureId;
             };
-            bufferInfo.textures.world1 = createTexture(document.getElementById('world1Texture'));
+
+            bufferInfo.textures.world = gl.createTexture();
+            bufferInfo.textures.soccerBall = gl.createTexture();
+            bufferInfo.textures.webcam = gl.createTexture();
+
+            loadTexture(bufferInfo.textures.webcam, document.getElementById('textureElem3'));
+            loadTexture(bufferInfo.textures.soccerBall, document.getElementById('textureElem2'));
+            loadTexture(bufferInfo.textures.world, document.getElementById('textureElem1'));
         },
         setDefaults(gl, programs) {
             let devicePixelRatio = window.devicePixelRatio || 1;
@@ -74,18 +67,14 @@ let drawing = (() => {
             gl.canvas.height = dom_helper.getDocumentHeight() * devicePixelRatio;
 
             gl.viewport(0, 0, gl.drawingBufferWidth, gl.drawingBufferHeight);
-            gl.clearColor(0, 0, 0, 1.0);
+            gl.clearColor(1.0, 1.0, 1.0, 1.0);
 
             programsAvailable = ShaderUtil.createPrograms(gl, programs);
-            program = programsAvailable[0];
-        },
-        defineOptions(gl) {
-
+            selectionFB = gl.createFramebuffer();
         },
         render() {
-            drawing.defineOptions(gl);
-
-            gl.useProgram( program );
+            let program = programsAvailable[0];
+            gl.useProgram(program);
             gl.enable(gl.DEPTH_TEST);
             gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
 
@@ -131,6 +120,26 @@ let drawing = (() => {
             gl.uniform4fv(gl.getUniformLocation(program, 'lightsPositions'), floatLights);
             bufferInfo.lights = ObjectManager.lights;
 
+
+            let texture = gl.createTexture();
+            gl.bindFramebuffer(gl.FRAMEBUFFER, selectionFB);
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+
+            //framebuffer render to grab selection
+            for(let [, object] of ObjectManager.collection) {
+                gl.uniform1i(gl.getUniformLocation(program, 'indexColorSelection'), object.id+100);
+                object.draw(gl, bufferInfo);
+            }
+
+            let color = new Uint8Array(4);
+            gl.readPixels(840, 477, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, color);
+
+            // console.log(color);
+
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
+            gl.uniform1i(gl.getUniformLocation(program, 'indexColorSelection'), 0);
             for(let [, object] of ObjectManager.collection) {
                 object.draw(gl, bufferInfo);
             }

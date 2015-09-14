@@ -1,4 +1,5 @@
 let SphereLatLongTriangles = (() => {
+    let distance = (Math.sin(window.performance.now()) + 1) / 2.0;
     let build = (latitudeBands, longitudeBands) => {
         let vertexPositionData = [], indexData = [], normalData = [], texCoordsData = [];
         for (let latNumber=0; latNumber <= latitudeBands; latNumber++) {
@@ -14,8 +15,8 @@ let SphereLatLongTriangles = (() => {
                 let x = cosPhi * sinTheta;
                 let y = cosTheta;
                 let z = sinPhi * sinTheta;
-                let u = 1 - longNumber / longitudeBands;
-                let v = 1 - latNumber / latitudeBands;
+                let u = longNumber / longitudeBands;
+                let v = latNumber / latitudeBands;
 
                 texCoordsData.push(vec2(u, v));
                 vertexPositionData.push(vec3(x, y, z));
@@ -33,10 +34,8 @@ let SphereLatLongTriangles = (() => {
             let c = vertexPositionData[first + 1];
             let d = vertexPositionData[second + 1];
 
-            vdata.push(a, b, c);
-            vdata.push(b, d, c);
-            tdata.push(vertexPositionData[first], vertexPositionData[second], vertexPositionData[first + 1],
-                       vertexPositionData[second], vertexPositionData[second + 1], vertexPositionData[first + 1]);
+            tdata.push(texCoordsData[first], texCoordsData[second], texCoordsData[first + 1],
+                       texCoordsData[second], texCoordsData[second + 1], texCoordsData[first + 1]);
 
             var t1 = subtract(b, a);
             var t2 = subtract(c, a);
@@ -53,6 +52,12 @@ let SphereLatLongTriangles = (() => {
             normal[3] = 0.0;
 
             normalData.push(b, d, c);
+
+            // normal = vec3(normal);
+            // for(let i=0; i<3; i++) normal[i] *= distance;
+            // a = add(normal, a); b = add(normal, b); c = add(normal, c); d = add(normal, d);
+            vdata.push(a, b, c);
+            vdata.push(b, d, c);
           }
         }
 
@@ -62,7 +67,6 @@ let SphereLatLongTriangles = (() => {
     let object = build(64, 64);
     return {
         create({id}) {
-
             return ObjectCreator.create({
                 id: id,
                 name: 'Sphere',
@@ -97,8 +101,8 @@ let SphereLatLongIndexes = (() => {
                 let x = cosPhi * sinTheta;
                 let y = cosTheta;
                 let z = sinPhi * sinTheta;
-                let u = 1 - longNumber / longitudeBands;
-                let v = 1 - latNumber / latitudeBands;
+                let u = longNumber / longitudeBands;
+                let v = latNumber / latitudeBands;
 
                 texCoordsData.push(vec2(u, v));
                 normalData.push(vec3(x, y, z));
@@ -145,8 +149,8 @@ let SphereLatLongIndexes = (() => {
 })();
 
 // let Sphere = SphereTetrahedronSub;
-// let Sphere = SphereLatLongTriangles;
-let Sphere = SphereLatLongIndexes;
+let Sphere = SphereLatLongTriangles;
+// let Sphere = SphereLatLongIndexes;
 // let start = 0;
 //
 // start = window.performance.now();

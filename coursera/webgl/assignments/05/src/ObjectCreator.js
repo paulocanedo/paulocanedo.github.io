@@ -19,6 +19,8 @@ let ObjectCreator = (() => {
                 toString() { return `${name} [${id}]`; },
 
                 get id() { return id },
+                get textureName() { return this._textureName; },
+                set textureName(tname) { this._textureName = tname; },
                 get translateValues() { return [translateMatrix[0][3], translateMatrix[1][3], translateMatrix[2][3]]; },
                 get scaleValues() { return [scaleMatrix[0][0], scaleMatrix[1][1], scaleMatrix[2][2]]; },
                 get rotateValues() { return _rotateValues; },
@@ -141,6 +143,17 @@ let ObjectCreator = (() => {
                     gl.uniform4fv(diffuseProductLoc, flatten(diffuseProduct));
                     gl.uniform4fv(specularProductLoc, flatten(specularProduct));
                     gl.uniform1f(shininessLoc, material.shininess);
+
+                    gl.bindTexture(gl.TEXTURE_2D, textures[this.textureName]);
+                    if(this.textureName == 'webcam') {
+                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+                        let ref = document.getElementById('textureElem3');
+                        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, ref);
+                    } else {
+                        gl.generateMipmap(gl.TEXTURE_2D);
+                    }
 
                     if(flatIndices.length > 0) {
                         gl.drawElements(gl.TRIANGLES, flatIndices.length, gl.UNSIGNED_SHORT, 0);

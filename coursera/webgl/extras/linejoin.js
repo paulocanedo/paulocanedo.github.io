@@ -267,6 +267,9 @@ let drawing = (() => {
             let vColor = gl.getAttribLocation( program, "vColor" );
             gl.vertexAttribPointer( vColor, 3, gl.FLOAT, false, 0, 0 );
             gl.enableVertexAttribArray( vColor );
+
+            let vTexCoord = gl.getAttribLocation( program, "vTexCoord" );
+
         },
         addToCurrentPath(vertex) {
             let path = currentPath.path;

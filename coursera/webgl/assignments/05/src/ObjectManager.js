@@ -31,8 +31,9 @@ let ObjectManager = (() => {
         buildObject(what, params = {}) {
             let object = null;
             params.id = this.newUuid;
-            params.radius |= 1;
-            params.bands  |= 32;
+            params.radius = params.radius || 1;
+            params.bands  = params.bands || 32;
+            params.textureName = params.textureName || 'world';
 
             switch (what) {
                 case 'cube':
@@ -63,6 +64,7 @@ let ObjectManager = (() => {
             }
             let domObject = this.newListItem(object);
             object.dom = domObject;
+            object.textureName = params.textureName;
             domObjects.appendChild(domObject);
 
             collection.set(this.lastUuid, object);
@@ -92,14 +94,14 @@ let ObjectManager = (() => {
 
             return node;
         },
-
-        get selected() {
-            for(let elem of collection) {
-                if(elem.dom.className.indexOf('active') >= 0) {
-                    return elem;
-                }
-            }
-            return null;
-        }
+        //
+        // get selected() {
+        //     for(let elem of collection) {
+        //         if(elem.dom.className.indexOf('active') >= 0) {
+        //             return elem;
+        //         }
+        //     }
+        //     return null;
+        // }
     }
 })();

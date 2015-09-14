@@ -1,5 +1,8 @@
 "use strict";
 
+navigator.getMedia = (navigator.getUserMedia || navigator.webkitGetUserMedia ||
+                   navigator.mozGetUserMedia || navigator.msGetUserMedia);
+
 let application = (() => {
     let transformX = document.getElementById('transformX');
     let transformY = document.getElementById('transformY');
@@ -38,6 +41,9 @@ let application = (() => {
                 document.getElementById('ambientColorBtn').style.backgroundColor = `rgb(${acolor.join(',')})`;
                 document.getElementById('diffuseColorBtn').style.backgroundColor = `rgb(${dcolor.join(',')})`;
                 document.getElementById('specularColorBtn').style.backgroundColor = `rgb(${scolor.join(',')})`;
+
+                document.getElementById('textureFromOption').value = object.textureName;
+
                 transformX.value = values[Axis.X];
                 transformY.value = values[Axis.Y];
                 transformZ.value = values[Axis.Z];
@@ -66,6 +72,7 @@ let application = (() => {
             objectsList.addEventListener('click',
                 evt => application.updateTransformValues(evt.target.getAttribute('data-id'), dom_helper.querySelected('transformation')));
 
+
             let tbuttons = document.querySelectorAll("#translateTransform,#scaleTransform,#rotateTransform");
             for(let button of tbuttons) {
                 button.addEventListener('click', evt => {
@@ -74,6 +81,28 @@ let application = (() => {
                     }
                 });
             }
+
+            document.getElementById('textureFromOption').addEventListener('change', evt => {
+                let selectedId = dom_helper.getSelectedFromList(objectsList.children, 'id');
+                let object = ObjectManager.find(selectedId);
+
+                if(object) {
+                    object.textureName = evt.target.value;
+
+                    if(object.textureName == 'webcam') {
+                        navigator.getMedia(
+                            {video: true, audio: false},
+                            (localMediaStream) => {
+                                let videoElem = document.getElementById('textureElem3');
+                                videoElem.src = window.URL.createObjectURL(localMediaStream);
+                            },
+                            (err) => {
+                                console.log("An error occured: " + err);
+                            }
+                        );
+                    }
+                }
+            });
 
             let transform = (value, axis) => {
                 let selectedId = dom_helper.getSelectedFromList(objectsList.children, 'id');
@@ -120,8 +149,9 @@ let application = (() => {
 
             //temp
             let object = ObjectManager.buildObject('sphere');
+            // object.textureName = 'soccerBall';
             // object.translate({x: 3.0});
-            ObjectManager.buildObject('light', { position: [-50,  50, -50, 0.0] });
+            // ObjectManager.buildObject('light', { position: [-1000,  -1000, -1000, 1.0] });
             // ObjectManager.buildObject('light', { position: [ 50,  50, -50, 0.0] });
             // ObjectManager.buildObject('light', { position: [-10, -10, -10, 0.0] });
             // ObjectManager.buildObject('light', { position: [ 10, -10, -10, 0.0] });
@@ -147,10 +177,10 @@ window.addEventListener('load', () => {
     });
     // programs.push({
     //     vertexShader: {
-    //         source: 'shaders/vertex_lighting.vs.glsl', type: WebGLRenderingContext.VERTEX_SHADER, content: 0
+    //         source: 'shaders/fragment_lighting.vs.glsl', type: WebGLRenderingContext.VERTEX_SHADER, content: 0
     //     },
     //     fragmentShader: {
-    //         source: 'shaders/vertex_lighting.fs.glsl', type: WebGLRenderingContext.FRAGMENT_SHADER, content: 0
+    //         source: 'shaders/selection.fs.glsl', type: WebGLRenderingContext.FRAGMENT_SHADER, content: 0
     //     }
     // });
 
@@ -163,10 +193,8 @@ window.addEventListener('load', () => {
             }
         };
 
-        // setTimeout(() => {
         request.open("get", shader.source, true);
         request.send();
-        // }, i * 5000);
     };
 
     for(let i=0; i<programs.length; i++) {
@@ -177,17 +205,4 @@ window.addEventListener('load', () => {
         loadAjaxContent(vs);
         loadAjaxContent(fs);
     }
-
-    // navigator.getMedia = (navigator.getUserMedia || navigator.webkitGetUserMedia ||
-    //                    navigator.mozGetUserMedia || navigator.msGetUserMedia);
-    //
-    // navigator.getMedia({video: true, audio: false},
-    //     (localMediaStream) => {
-    //         let videoElem = document.getElementById('world1Texture');
-    //         videoElem.src = window.URL.createObjectURL(localMediaStream);
-    //     },
-    //     (err) => {
-    //         console.log("An error occured: " + err);
-    //     }
-    // );
 });
